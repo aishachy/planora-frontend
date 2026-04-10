@@ -1,6 +1,6 @@
 // import { Card } from "@/src/components/ui/card";
 
-import { Login } from "@/components/layout/Login";
+
 
 
 // export default function Home() {
@@ -11,6 +11,6 @@ import { Login } from "@/components/layout/Login";
 
 export default function Home() {
   return (
-    <Login></Login>
+    <h1>Home page</h1>
   )
 }
