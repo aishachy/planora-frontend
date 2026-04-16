@@ -1,6 +1,7 @@
 import { Button } from "components/ui/button"
-import { Input } from "components/ui/input"
-import { cn } from "@/lib/utils";
+
+import { cn } from "../../lib/utils";
+import { Input } from "@base-ui/react";
 
 interface LoginProps {
   heading?: string;

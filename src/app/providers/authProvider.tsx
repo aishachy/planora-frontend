@@ -1,35 +1,49 @@
-"use client";
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react"
 
 interface AuthContextType {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setUser: (user: any) => void;
+  user: any
+  setUser: (user: any) => void
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [user, setUser] = useState<any>(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : null;
+  const [user, setUser] = useState<any>(null)
+
+  // Load user from localStorage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
     }
-    return null;
-  });
+  }, [])
+
+  // Sync user to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user))
+    } else {
+      localStorage.removeItem("user")
+    }
+  }, [user])
 
   return (
     <AuthContext.Provider value={{ user, setUser }}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used inside AuthProvider");
-  return context;
-};
+  const context = useContext(AuthContext)
+
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider")
+  }
+
+  return context
+}
