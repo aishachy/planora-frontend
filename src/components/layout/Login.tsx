@@ -1,81 +1,74 @@
-import { Button } from "components/ui/button"
+"use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "components/ui/button";
 import { cn } from "../../lib/utils";
 import { Input } from "@base-ui/react";
+import { toastError, toastSuccess } from "../../lib/swal";
+import { loginUser } from "../../app/services/authService";
+import { useAuth } from "../../app/providers/authProvider";
 
-interface LoginProps {
-  heading?: string;
-  // logo: {
-  //   url: string;
-  //   src: string;
-  //   alt: string;
-  //   title?: string;
-  //   className?: string;
-  // };
-  buttonText?: string;
-  googleText?: string;
-  signupText?: string;
-  signupUrl?: string;
-  className?: string;
-}
+const Login = ({ className }: { className?: string }) => {
+  const router = useRouter();
+  const { setUser } = useAuth();
 
-const Login = ({
-  heading = "Login",
-  // logo = {
-  //   url: "https://www.shadcnblocks.com",
-  //   src: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/shadcnblockscom-wordmark.svg",
-  //   alt: "logo",
-  //   title: "shadcnblocks.com",
-  // },
-  buttonText = "Login",
-  signupText = "Need an account?",
-  signupUrl = "https://shadcnblocks.com",
-  className,
-}: LoginProps) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const user = await loginUser({ email, password });
+
+      localStorage.setItem("user", JSON.stringify(user));
+      setUser(user);
+
+      toastSuccess("Login successful!");
+      router.push("/dashboard");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      toastError(err?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className={cn("h-screen bg-muted", className)}>
       <div className="flex h-full items-center justify-center">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-6 lg:justify-start">
-          {/* <a href={logo.url}>
-            <img
-              src={logo.src}
-              alt={logo.alt}
-              title={logo.title}
-              className="h-10 dark:invert"
-            />
-          </a> */}
-          <div className="flex w-full max-w-sm min-w-sm flex-col items-center gap-y-4 rounded-md border border-muted bg-background px-6 py-8 shadow-md">
-            {heading && <h1 className="text-xl font-semibold">{heading}</h1>}
-            <Input
-              type="email"
-              placeholder="Email"
-              className="text-sm"
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              className="text-sm"
-              required
-            />
-            <Button type="submit" className="w-full">
-              {buttonText}
-            </Button>
-          </div>
-          <div className="flex justify-center gap-1 text-sm text-muted-foreground">
-            <p>{signupText}</p>
-            <a
-              href={signupUrl}
-              className="font-medium text-primary hover:underline"
-            >
-              Sign up
-            </a>
-          </div>
-        </div>
+        <form
+          onSubmit={handleLogin}
+          className="flex w-full max-w-sm flex-col gap-4 rounded-md border bg-background px-6 py-8 shadow-md"
+        >
+          <h1 className="text-xl font-semibold text-center">Login</h1>
+
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <Button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </Button>
+        </form>
       </div>
     </section>
   );
 };
 
-export { Login };
+export default Login;

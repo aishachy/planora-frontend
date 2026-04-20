@@ -33,9 +33,12 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetch("http://localhost:5000/api/event")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
       .then((data) => {
-        setEvents(data.data || data);
+        setEvents(Array.isArray(data.data) ? data.data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -135,9 +138,9 @@ export default function EventsPage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
                 ) : ( */}
-                  <div className="h-full w-full bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white/80 text-lg font-semibold">
-                    Add Event Image Later
-                  </div>
+                <div className="h-full w-full bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white/80 text-lg font-semibold">
+                  Add Event Image Later
+                </div>
                 ){"}"}
                 <div className="absolute top-4 right-4 rounded-full px-3 py-1 text-xs font-semibold bg-black/40 backdrop-blur-md border border-white/10">
                   {event.isPaid ? `$${event.fee}` : "Free"}

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client"
+
 import * as React from "react"
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 
@@ -6,11 +9,12 @@ import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
 /* ---------------- ROOT ---------------- */
 
-function Accordion(
-  props: React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root>
-) {
-  const { className, ...rest } = props
+type AccordionProps =
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root> & {
+    collapsible?: boolean // optional, but NOT passed to DOM
+  }
 
+function Accordion({ className, collapsible, ...rest }: AccordionProps) {
   return (
     <AccordionPrimitive.Root
       data-slot="accordion"
