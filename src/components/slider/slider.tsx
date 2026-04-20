@@ -1,92 +1,130 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-interface Event {
-  isPublic: boolean;
-  id: string;
-  title: string;
-  date: string;
-  isPaid: boolean;
-  fee?: number;
-  organizer?: {
-    name: string;
-  };
-}
+import {
+  CalendarDays,
+  Users,
+  MapPin,
+  ArrowRight,
+} from "lucide-react";
 
-export default function UpcomingEventsSlider() {
-  const [events, setEvents] = useState<Event[]>([]);
+export const Slider = () => {
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/event")
-      .then((res) => res.json())
-      .then((data) => {
-        const publicEvents =
-          data?.data?.filter((e: Event) => e.isPublic) || [];
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/event`
+        );
 
-        setEvents(publicEvents.slice(0, 9)); // limit to 9
-      });
+        const data = await res.json();
+
+        const publicEvents =
+          data?.data?.filter((e: any) => e.isPublic) || [];
+
+        setEvents(publicEvents.slice(0, 9));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   return (
     <section className="bg-[#020817] py-16 px-6 text-white">
       <div className="max-w-7xl mx-auto">
+
         {/* HEADER */}
         <div className="mb-10">
           <h2 className="text-3xl md:text-5xl font-bold mb-3">
             Upcoming Events
           </h2>
           <p className="text-gray-400">
-            Discover what’s happening next and reserve your spot early.
+            Discover what’s happening next and reserve your spot.
           </p>
         </div>
 
-        {/* SLIDER */}
-        <div className="flex gap-6 overflow-x-auto pb-4">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="min-w-70 max-w-70 rounded-2xl overflow-hidden bg-[#0b1220] border border-white/10 hover:-translate-y-1 hover:shadow-xl transition"
-            >
-              {/* GRADIENT HEADER */}
-              <div className="relative h-32 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-sm font-semibold">
-                Event
+        {/* MARQUEE WRAPPER */}
+        <div className="overflow-hidden relative">
+          <div className="flex gap-6 w-max animate-scroll">
 
-                {/* FEE BADGE */}
-                <span className="absolute top-3 right-3 text-xs bg-black/30 px-3 py-1 rounded-full">
-                  {event.isPaid ? `$${event.fee}` : "Free"}
-                </span>
-              </div>
+            {[...events, ...events].map((event, i) => (
+              <div
+                key={i}
+                className="w-[320px] shrink-0 rounded-3xl overflow-hidden bg-[#0f172a] border border-white/10"
+              >
 
-              {/* CONTENT */}
-              <div className="p-4">
-                <h3 className="font-semibold text-base mb-2 line-clamp-2">
-                  {event.title}
-                </h3>
+                {/* TOP */}
+                <div className="relative h-44 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-medium">
+                  Add Event Image Later
 
-                <div className="text-xs text-gray-400 space-y-1 mb-4">
-                  <p>
-                    📅 {new Date(event.date).toLocaleDateString()}
-                  </p>
-                  <p>
-                    👤 {event.organizer?.name || "Unknown"}
-                  </p>
+                  <span className="absolute top-3 right-3 text-xs bg-black/30 px-3 py-1 rounded-full">
+                    {event.isPaid ? `$${event.fee}` : "Free"}
+                  </span>
                 </div>
 
-                <Link
-                  href={`/event/${event.id}`}
-                  className="flex items-center justify-center gap-2 bg-white text-black py-2 rounded-full text-sm hover:bg-gray-200 transition"
-                >
-                  View
-                  <ArrowRight size={14} />
-                </Link>
+                {/* CONTENT */}
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">
+                    {event.title}
+                  </h3>
+
+                  <div className="space-y-2 text-sm text-gray-400 mb-6">
+
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={16} />
+                      {new Date(event.date).toLocaleDateString()}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Users size={16} />
+                      {event.organizer?.name || "Unknown"}
+                    </div>
+
+                    {event.venue && (
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} />
+                        {event.venue}
+                      </div>
+                    )}
+                  </div>
+
+                  <Link
+                    href={`/event/${event.id}`}
+                    className="w-full flex items-center justify-center gap-2 bg-gray-200 text-black py-3 rounded-full font-medium hover:bg-gray-300 transition"
+                  >
+                    View Details
+                    <ArrowRight size={16} />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+
+          </div>
         </div>
+
       </div>
+
+      {/* CSS ANIMATION */}
+      <style jsx>{`
+        .animate-scroll {
+          animation: scroll 25s linear infinite;
+        }
+
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </section>
   );
-}
+};
