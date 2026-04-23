@@ -32,13 +32,13 @@ export default function EditEventPage() {
     e.preventDefault();
 
     await fetch(`${API_URL}/api/event/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(form),
     });
 
-    router.push(`/dashboard/events/${id}`);
+    router.push(`/dashboard/event/${id}`);
   };
 
   if (!form) return <div className="p-6">Loading...</div>;
