@@ -3,6 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import ReviewList from "components/reviews/reviewList";
+import ReviewForm from "components/reviews/reviewForm";
 
 interface Event {
   id: string;
@@ -25,33 +27,68 @@ interface Event {
 export default function EventDetailsPage() {
   const params = useParams();
 
-  const id = Array.isArray(params.id)
+  const id = Array.isArray(params?.id)
     ? params.id[0]
-    : params.id;
+    : params?.id;
 
   const [event, setEvent] = useState<Event | null>(null);
-  const [user, setUser] = useState<any>(null); // (if you have auth)
+  const [user, setUser] = useState<any>(null);
+  const [refreshReviews, setRefreshReviews] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState(false);
 
+  // FETCH EVENT
   useEffect(() => {
     if (!id) return;
 
-    fetch(`http://localhost:5000/api/event/${id}`)
-      .then((res) => res.json())
-      .then((data) => setEvent(data.data || data))
-      .catch((err) => console.error(err));
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(
+          `http://localhost:5000/api/event/${id}`
+        );
+
+        const data = await res.json();
+
+        setEvent(data?.data || data);
+      } catch (err) {
+        console.error("Failed to load event", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
   }, [id]);
 
-  // OPTIONAL: fetch current user (if you have /me endpoint)
+  // FETCH USER
   useEffect(() => {
-    fetch("http://localhost:5000/api/auth/me", {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setUser(data.data));
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/auth/me",
+          {
+            credentials: "include",
+          }
+        );
+
+        const data = await res.json();
+        setUser(data?.data || null);
+      } catch (err) {
+        console.error("Failed to load user", err);
+      }
+    };
+
+    fetchUser();
   }, []);
 
-  if (!event) {
+  if (loading) {
     return <div className="p-10">Loading...</div>;
+  }
+
+  if (!event) {
+    return <div className="p-10">Event not found</div>;
   }
 
   // 👑 OWNER CHECK
@@ -60,7 +97,8 @@ export default function EventDetailsPage() {
   const getButtonText = () => {
     if (event.isPublic && !event.isPaid) return "Join";
     if (event.isPublic && event.isPaid) return "Pay & Join";
-    if (!event.isPublic && !event.isPaid) return "Request to Join";
+    if (!event.isPublic && !event.isPaid)
+      return "Request to Join";
     return "Pay & Request";
   };
 
@@ -83,10 +121,11 @@ export default function EventDetailsPage() {
 
       {/* Main Card */}
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 -mt-16 relative z-10">
-
         {/* Title */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">{event.title}</h1>
+          <h1 className="text-4xl font-bold">
+            {event.title}
+          </h1>
 
           <span className="bg-slate-100 px-4 py-2 rounded-full text-sm font-medium">
             {event.isPublic ? "Public" : "Private"} •{" "}
@@ -120,14 +159,16 @@ export default function EventDetailsPage() {
         </div>
 
         {/* Description */}
-        <p className="text-slate-600 mb-6">{event.description}</p>
+        <p className="text-slate-600 mb-6">
+          {event.description}
+        </p>
 
         {/* USER BUTTON */}
         <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl">
           {getButtonText()}
         </button>
 
-        {/* 👑 OWNER CONTROLS (NEW) */}
+        {/* OWNER CONTROLS */}
         {isOwner && (
           <div className="mt-6 flex gap-3">
             <button className="px-4 py-2 bg-blue-600 text-white rounded">
@@ -142,6 +183,19 @@ export default function EventDetailsPage() {
               Delete
             </button>
           </div>
+        )}
+
+        {/* REVIEW SECTION */}
+        <ReviewForm
+          eventId={id ?? ""}
+          onSuccess={() => setRefresh(!refresh)}
+        />
+
+        {id && (
+          <ReviewList
+            eventId={id}
+            key={refresh ? "1" : "0"}
+          />
         )}
       </div>
     </div>
