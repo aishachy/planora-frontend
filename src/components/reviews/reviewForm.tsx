@@ -5,72 +5,104 @@ import { useState } from "react";
 import { createReview } from "../../app/services/reviewService";
 
 export default function ReviewForm({
-    eventId,
-    onSuccess,
+  eventId,
+  refreshReviews,
 }: {
-    eventId: string;
-    onSuccess?: () => void;
+  eventId: string;
+  refreshReviews: () => void;
 }) {
-    const [rating, setRating] = useState(5);
-    const [comment, setComment] = useState("");
-    const [loading, setLoading] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async () => {
-        try {
-            setLoading(true);
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
 
-            const token = localStorage.getItem("token");
-            if (!token) {
-                alert("Login required");
-                return;
-            }
+    try {
+      setLoading(true);
 
-            const res = await createReview(
-                { eventId, rating, comment },
-                token
-            );
+      const token = localStorage.getItem("token");
 
-            alert(res.message || "Review submitted");
+      if (!token) {
+        alert("Please login first");
+        return;
+      }
 
-            setComment("");
-            setRating(5);
+      await createReview(
+        {
+          eventId,
+          rating,
+          comment,
+        },
+        token
+      );
 
-            onSuccess?.();
-        } catch (error: any) {
-            alert(error.message || "Failed to submit review");
-        } finally {
-            setLoading(false);
-        }
-    };
+      alert("Review added");
 
-    return (
-        <div className="p-4 border rounded-lg">
-            <h3 className="font-bold mb-2">Write a Review</h3>
+      setComment("");
+      setRating(5);
 
-            <select
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-            >
-                {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                        {n} ⭐
-                    </option>
-                ))}
-            </select>
+      refreshReviews();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <textarea
-                className="w-full border mt-2 p-2"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-            />
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="border p-4 rounded space-y-4"
+    >
+      <h2 className="text-xl font-semibold">
+        Write Review
+      </h2>
 
-            <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="mt-2 bg-black text-white px-4 py-2 rounded"
-            >
-                {loading ? "Submitting..." : "Submit"}
-            </button>
-        </div>
-    );
+      <div>
+        <label className="block mb-1">
+          Rating
+        </label>
+
+        <select
+          value={rating}
+          onChange={(e) =>
+            setRating(Number(e.target.value))
+          }
+          className="border p-2 w-full"
+        >
+          <option value={1}>1</option>
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+          <option value={4}>4</option>
+          <option value={5}>5</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block mb-1">
+          Comment
+        </label>
+
+        <textarea
+          value={comment}
+          onChange={(e) =>
+            setComment(e.target.value)
+          }
+          className="border p-2 w-full"
+          rows={4}
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
+        {loading ? "Submitting..." : "Submit"}
+      </button>
+    </form>
+  );
 }

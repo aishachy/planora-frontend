@@ -1,61 +1,58 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { getEventReviews } from "../../app/services/reviewService";
+import { useEffect, useState } from "react";
+import {
+  getEventReviews,
+} from "../../app/services/reviewService";
 
-type Review = {
-  id: string;
-  rating: number;
-  comment?: string;
-  user?: {
-    name?: string;
-  };
-};
+import ReviewCard from "../reviews/reviewCard";
 
-export default function ReviewList({ eventId }: { eventId: string }) {
-  const [reviews, setReviews] = useState<Review[]>([]);
+export default function ReviewList({
+  eventId,
+  refresh,
+}: {
+  eventId: string;
+  refresh: number;
+}) {
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadReviews = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const res = await getEventReviews(eventId);
-
-      const data = Array.isArray(res?.data) ? res.data : [];
-
-      setReviews(data);
-    } catch (error) {
-      console.error("Failed to load reviews:", error);
-      setReviews([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
   useEffect(() => {
-    if (eventId) loadReviews();
-  }, [eventId, loadReviews]);
+    const loadReviews = async () => {
+      try {
+        const result =
+          await getEventReviews(eventId);
+
+        setReviews(result.data || []);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, [eventId, refresh]);
 
   if (loading) {
-    return <p className="mt-6 text-gray-500">Loading reviews...</p>;
+    return <p>Loading reviews...</p>;
   }
 
   return (
-    <div className="mt-6">
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold">
+        Reviews
+      </h2>
+
       {reviews.length === 0 ? (
-        <p className="text-gray-500">No reviews yet.</p>
+        <p>No reviews yet</p>
       ) : (
-        reviews.map((r) => (
-          <div key={r.id} className="border p-3 mb-2 rounded">
-            <p className="font-semibold">
-              {r.user?.name || "Anonymous"}
-            </p>
-
-            <p>⭐ {r.rating}</p>
-
-            {r.comment && <p>{r.comment}</p>}
-          </div>
+        reviews.map((review) => (
+          <ReviewCard
+            key={review.id}
+            review={review}
+          />
         ))
       )}
     </div>

@@ -22,13 +22,30 @@ const Login = ({ className }: { className?: string }) => {
     setLoading(true);
 
     try {
-      const user = await loginUser({ email, password });
+      const result = await loginUser({
+        email,
+        password,
+      });
 
-      localStorage.setItem("user", JSON.stringify(user));
-      setUser(user);
+      // STORE TOKEN
+      localStorage.setItem(
+        "token",
+        result.token
+      );
+
+      // STORE USER
+      localStorage.setItem(
+        "user",
+        JSON.stringify(result.user)
+      );
+
+      // SET USER IN CONTEXT
+      setUser(result.user);
 
       toastSuccess("Login successful!");
+
       router.push("/dashboard");
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toastError(err?.message || "Login failed");

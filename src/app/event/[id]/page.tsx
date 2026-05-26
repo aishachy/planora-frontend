@@ -3,8 +3,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import ReviewList from "components/reviews/reviewList";
-import ReviewForm from "components/reviews/reviewForm";
+
+import ReviewList from "../../../components/reviews/reviewList";
+import ReviewForm from "../../../components/reviews/reviewForm";
+
+import {
+  getMyInvitations,
+  acceptInvitation,
+  rejectInvitation,
+  payAndAcceptInvitation,
+} from "../../services/invitationService";
 
 interface Event {
   id: string;
@@ -33,11 +41,15 @@ export default function EventDetailsPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [user, setUser] = useState<any>(null);
+
+  const [myInvitation, setMyInvitation] = useState<any>(null);
+
   const [refreshReviews, setRefreshReviews] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refresh, setRefresh] = useState(false);
 
+  // ---------------------------
   // FETCH EVENT
+  // ---------------------------
   useEffect(() => {
     if (!id) return;
 
@@ -62,15 +74,15 @@ export default function EventDetailsPage() {
     fetchEvent();
   }, [id]);
 
+  // ---------------------------
   // FETCH USER
+  // ---------------------------
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await fetch(
           "http://localhost:5000/api/auth/me",
-          {
-            credentials: "include",
-          }
+          { credentials: "include" }
         );
 
         const data = await res.json();
@@ -83,17 +95,38 @@ export default function EventDetailsPage() {
     fetchUser();
   }, []);
 
-  if (loading) {
-    return <div className="p-10">Loading...</div>;
-  }
+  // ---------------------------
+  // FETCH INVITATION FOR THIS EVENT
+  // ---------------------------
+  useEffect(() => {
+    const loadInvitation = async () => {
+      const token = localStorage.getItem("token");
+      if (!token || !id) return;
 
-  if (!event) {
-    return <div className="p-10">Event not found</div>;
-  }
+      try {
+        const res = await getMyInvitations(token);
 
-  // 👑 OWNER CHECK
+        const found = res.data?.find(
+          (inv: any) => inv.eventId === id
+        );
+
+        setMyInvitation(found || null);
+      } catch (err) {
+        console.error("Failed to load invitation", err);
+      }
+    };
+
+    loadInvitation();
+  }, [id]);
+
+  if (loading) return <div className="p-10">Loading...</div>;
+  if (!event) return <div className="p-10">Event not found</div>;
+
   const isOwner = user?.id === event?.organizer?.id;
 
+  // ---------------------------
+  // EVENT BUTTON TEXT
+  // ---------------------------
   const getButtonText = () => {
     if (event.isPublic && !event.isPaid) return "Join";
     if (event.isPublic && event.isPaid) return "Pay & Join";
@@ -102,8 +135,31 @@ export default function EventDetailsPage() {
     return "Pay & Request";
   };
 
+  // ---------------------------
+  // INVITATION ACTIONS
+  // ---------------------------
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("token")
+    : null;
+
+  const handleAccept = async () => {
+    await acceptInvitation(myInvitation.id, token!);
+    setMyInvitation({ ...myInvitation, status: "ACCEPTED" });
+  };
+
+  const handleReject = async () => {
+    await rejectInvitation(myInvitation.id, token!);
+    setMyInvitation({ ...myInvitation, status: "REJECTED" });
+  };
+
+  const handlePay = async () => {
+    await payAndAcceptInvitation(myInvitation.id, token!);
+    setMyInvitation({ ...myInvitation, status: "ACCEPTED" });
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
+
       {/* Banner */}
       <div className="h-96 bg-linear-to-r from-indigo-500 to-purple-500 flex items-center justify-center">
         {event.image ? (
@@ -121,11 +177,10 @@ export default function EventDetailsPage() {
 
       {/* Main Card */}
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 -mt-16 relative z-10">
+
         {/* Title */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">
-            {event.title}
-          </h1>
+          <h1 className="text-4xl font-bold">{event.title}</h1>
 
           <span className="bg-slate-100 px-4 py-2 rounded-full text-sm font-medium">
             {event.isPublic ? "Public" : "Private"} •{" "}
@@ -139,31 +194,16 @@ export default function EventDetailsPage() {
           <p>⏰ {event.time}</p>
           <p>📍 {event.venue || "Online Event"}</p>
 
-          {event.eventLink && (
-            <p>
-              🔗{" "}
-              <a
-                href={event.eventLink}
-                target="_blank"
-                className="text-indigo-600 underline"
-              >
-                Join Event
-              </a>
-            </p>
-          )}
-
           <p>👤 {event.organizer?.name}</p>
-          <p>
-            💳 {event.isPaid ? `$${event.fee}` : "Free"}
-          </p>
+          <p>💳 {event.isPaid ? `$${event.fee}` : "Free"}</p>
         </div>
 
-        {/* Description */}
+        {/* DESCRIPTION */}
         <p className="text-slate-600 mb-6">
           {event.description}
         </p>
 
-        {/* USER BUTTON */}
+        {/* JOIN BUTTON */}
         <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl">
           {getButtonText()}
         </button>
@@ -185,18 +225,64 @@ export default function EventDetailsPage() {
           </div>
         )}
 
-        {/* REVIEW SECTION */}
+        {/* ---------------- INVITATION SECTION ---------------- */}
+
+        <div className="mt-6 border p-4 rounded bg-yellow-50">
+          {myInvitation ? (
+            <>
+              <p className="font-semibold">
+                🎉 You are invited to this event
+              </p>
+
+              <p>Status: {myInvitation.status}</p>
+
+              {myInvitation.status === "PENDING" && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={handleAccept}
+                    className="bg-green-500 text-white px-3 py-1 rounded"
+                  >
+                    Accept
+                  </button>
+
+                  <button
+                    onClick={handleReject}
+                    className="bg-red-500 text-white px-3 py-1 rounded"
+                  >
+                    Reject
+                  </button>
+
+                  {event.isPaid && (
+                    <button
+                      onClick={handlePay}
+                      className="bg-blue-500 text-white px-3 py-1 rounded"
+                    >
+                      Pay & Accept
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-600">
+              You are not invited to this event
+            </p>
+          )}
+        </div>
+
+        {/* ---------------- REVIEWS ---------------- */}
+
         <ReviewForm
           eventId={id ?? ""}
-          onSuccess={() => setRefresh(!refresh)}
+          refreshReviews={() => setRefreshReviews(!refreshReviews)}
         />
 
         {id && (
           <ReviewList
             eventId={id}
-            key={refresh ? "1" : "0"}
-          />
+            key={refreshReviews ? "1" : "0"} refresh={0}          />
         )}
+
       </div>
     </div>
   );
