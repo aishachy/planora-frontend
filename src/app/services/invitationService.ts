@@ -40,6 +40,24 @@ export const getMyInvitations = async (token: string) => {
     return data;
 };
 
+export const getSentInvitations = async (token: string) => {
+  const res = await fetch(
+    `${API}/api/invitation/sentInvitations`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch sent invitations");
+  }
+
+  return res.json();
+};
+
 /**
  * 📩 SEND INVITATION (ORGANIZER ONLY)
  */

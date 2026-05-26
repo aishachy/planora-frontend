@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { useState } from "react";
 import {
   acceptInvitation,
   rejectInvitation,
@@ -13,69 +13,15 @@ export default function InvitationCard({
   inv,
   refresh,
 }: any) {
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
+  const token = localStorage.getItem("token");
 
-  // ACCEPT
-  const accept = async () => {
+  const handleAction = async (action: () => Promise<any>) => {
     try {
       setLoading(true);
-
-      await acceptInvitation(
-        inv.id,
-        token!
-      );
-
-      alert("Invitation accepted");
-
-      refresh();
-    } catch (error: any) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // REJECT
-  const reject = async () => {
-    try {
-      setLoading(true);
-
-      await rejectInvitation(
-        inv.id,
-        token!
-      );
-
-      alert("Invitation rejected");
-
-      refresh();
-    } catch (error: any) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // PAY & ACCEPT
-  const payAndAccept = async () => {
-    try {
-      setLoading(true);
-
-      await payAndAcceptInvitation(
-        inv.id,
-        token!
-      );
-
-      alert(
-        "Payment successful & invitation accepted"
-      );
-
-      refresh();
+      await action();
+      await refresh(); // 🔥 instantly refresh list
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -84,70 +30,72 @@ export default function InvitationCard({
   };
 
   return (
-    <div className="border p-4 rounded mb-4">
-      <h3 className="text-lg font-bold">
-        {inv.event.title}
-      </h3>
+    <div className="border p-4 rounded bg-white">
+      {/* EVENT TITLE */}
+      <h2 className="text-xl font-bold">
+        {inv.event?.title}
+      </h2>
 
-      <p className="mt-1">
-        Status:
-        <span className="font-semibold ml-1">
-          {inv.status}
-        </span>
-      </p>
-
-      <p className="mt-1">
-        Event Type:
-        {inv.event.isPaid
-          ? " Paid"
-          : " Free"}
-      </p>
-
-      {inv.event.isPaid && (
-        <p className="mt-1">
-          Fee: ৳{inv.event.fee}
+      {/* DETAILS */}
+      <div className="mt-2 text-sm text-gray-600 space-y-1">
+        <p>Date: {inv.event?.date}</p>
+        <p>Venue: {inv.event?.venue}</p>
+        <p>
+          Type: {inv.event?.isPaid ? "Paid" : "Free"}
         </p>
-      )}
 
+        {inv.event?.isPaid && (
+          <p>Fee: ৳{inv.event?.fee}</p>
+        )}
+      </div>
+
+      {/* STATUS */}
+      <p className="mt-3 font-semibold">
+        Status: {inv.status}
+      </p>
+
+      {/* BUTTONS */}
       {inv.status === "PENDING" && (
         <div className="flex gap-2 mt-4">
-          
-          {/* FREE EVENT */}
-          {!inv.event.isPaid && (
+          {!inv.event?.isPaid && (
             <button
-              onClick={accept}
               disabled={loading}
-              className="bg-green-500 text-white px-3 py-2 rounded"
+              onClick={() =>
+                handleAction(() =>
+                  acceptInvitation(inv.id, token!)
+                )
+              }
+              className="bg-green-500 text-white px-4 py-2 rounded disabled:opacity-50"
             >
-              {loading
-                ? "Processing..."
-                : "Accept"}
+              Accept
             </button>
           )}
 
-          {/* REJECT */}
+          {inv.event?.isPaid && (
+            <button
+              disabled={loading}
+              onClick={() =>
+                handleAction(() =>
+                  payAndAcceptInvitation(inv.id, token!)
+                )
+              }
+              className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
+            >
+              Pay & Accept
+            </button>
+          )}
+
           <button
-            onClick={reject}
             disabled={loading}
-            className="bg-red-500 text-white px-3 py-2 rounded"
+            onClick={() =>
+              handleAction(() =>
+                rejectInvitation(inv.id, token!)
+              )
+            }
+            className="bg-red-500 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {loading
-              ? "Processing..."
-              : "Reject"}
+            Reject
           </button>
-
-          {/* PAID EVENT */}
-          {inv.event.isPaid && (
-            <button
-              onClick={payAndAccept}
-              disabled={loading}
-              className="bg-blue-500 text-white px-3 py-2 rounded"
-            >
-              {loading
-                ? "Processing..."
-                : "Pay & Accept"}
-            </button>
-          )}
         </div>
       )}
     </div>

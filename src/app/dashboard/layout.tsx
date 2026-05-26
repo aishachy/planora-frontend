@@ -31,6 +31,10 @@ export default function DashboardLayout({
             Invitations
           </Link>
 
+          <Link href="/dashboard/invitation/sentInvitationList" className="block hover:text-black">
+            Sent Invitations
+          </Link>
+
           <Link href="/dashboard/register" className="block hover:text-black">
             My Registrations
           </Link>

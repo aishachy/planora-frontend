@@ -1,45 +1,56 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from "react";
 import { getMyInvitations } from "../../services/invitationService";
+import InvitationCard from "../../../components/invitation/invitationCard";
 
 export default function InvitationsPage() {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+      if (!token) return setData([]);
+
+      const res = await getMyInvitations(token);
+
+      setData(res.data ?? res ?? []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setData([]);
-          return;
-        }
-        const res = await getMyInvitations(token);
-        setData(res.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     load();
   }, []);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Invitations</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Invitations
+      </h1>
 
-      {data.length === 0 ? (
-        <p className="text-gray-500">No invitations found</p>
+      {loading ? (
+        <p className="text-gray-500">Loading...</p>
+      ) : data.length === 0 ? (
+        <p className="text-gray-500">
+          No invitations found
+        </p>
       ) : (
         <div className="space-y-3">
           {data.map((inv: any) => (
-            <div key={inv.id} className="p-4 bg-white rounded shadow">
-              <h2 className="font-semibold">{inv.eventTitle}</h2>
-              <p className="text-sm text-gray-600">
-                Status: {inv.status}
-              </p>
-            </div>
+            <InvitationCard
+              key={inv.id}
+              inv={inv}
+              refresh={load}   // 🔥 important
+            />
           ))}
         </div>
       )}

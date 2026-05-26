@@ -2,7 +2,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const getEventRegistrations = async (eventId: string | undefined) => {
+export const getEventRegistrations = async (eventId: string | undefined, p0: string) => {
   const res = await fetch(`${API_URL}/api/registration/event/${eventId}`, {
     credentials: "include",
   });

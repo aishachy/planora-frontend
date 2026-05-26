@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getMyInvitations } from "../../app/services/invitationService";
-import InvitationCard from "../invitation/invitationCard";
+import InvitationCard from "./invitationCard";
 
 export default function InvitationList() {
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -18,6 +18,7 @@ export default function InvitationList() {
       if (!token) return;
 
       const res = await getMyInvitations(token);
+      console.log("INVITATIONS:", res);
 
       setInvitations(res.data || []);
     } catch (err) {
