@@ -2,9 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  getEventReviews,
-} from "../../app/services/reviewService";
+
+import { getEventReviews } from "../../app/services/reviewService";
 
 import ReviewCard from "../reviews/reviewCard";
 
@@ -18,20 +17,24 @@ export default function ReviewList({
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // LOAD REVIEWS
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+
+      const result =
+        await getEventReviews(eventId);
+
+      setReviews(result.data || []);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // FETCH ON PAGE LOAD
   useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        const result =
-          await getEventReviews(eventId);
-
-        setReviews(result.data || []);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadReviews();
   }, [eventId, refresh]);
 
@@ -52,6 +55,7 @@ export default function ReviewList({
           <ReviewCard
             key={review.id}
             review={review}
+            refreshReviews={loadReviews}
           />
         ))
       )}

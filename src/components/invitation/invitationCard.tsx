@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+import { useState } from "react";
 
 import {
   acceptInvitation,
@@ -9,53 +12,140 @@ import {
 export default function InvitationCard({
   inv,
   refresh,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: any) {
-  const token = localStorage.getItem("token");
+  const [loading, setLoading] =
+    useState(false);
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
+  // ACCEPT
   const accept = async () => {
-    await acceptInvitation(inv.id, token!);
-    refresh();
+    try {
+      setLoading(true);
+
+      await acceptInvitation(
+        inv.id,
+        token!
+      );
+
+      alert("Invitation accepted");
+
+      refresh();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // REJECT
   const reject = async () => {
-    await rejectInvitation(inv.id, token!);
-    refresh();
+    try {
+      setLoading(true);
+
+      await rejectInvitation(
+        inv.id,
+        token!
+      );
+
+      alert("Invitation rejected");
+
+      refresh();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // PAY & ACCEPT
   const payAndAccept = async () => {
-    await payAndAcceptInvitation(inv.id, token!);
-    refresh();
+    try {
+      setLoading(true);
+
+      await payAndAcceptInvitation(
+        inv.id,
+        token!
+      );
+
+      alert(
+        "Payment successful & invitation accepted"
+      );
+
+      refresh();
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="border p-3 rounded mb-3">
-      <h3 className="font-bold">{inv.event.title}</h3>
+    <div className="border p-4 rounded mb-4">
+      <h3 className="text-lg font-bold">
+        {inv.event.title}
+      </h3>
 
-      <p>Status: {inv.status}</p>
+      <p className="mt-1">
+        Status:
+        <span className="font-semibold ml-1">
+          {inv.status}
+        </span>
+      </p>
+
+      <p className="mt-1">
+        Event Type:
+        {inv.event.isPaid
+          ? " Paid"
+          : " Free"}
+      </p>
+
+      {inv.event.isPaid && (
+        <p className="mt-1">
+          Fee: ৳{inv.event.fee}
+        </p>
+      )}
 
       {inv.status === "PENDING" && (
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={accept}
-            className="bg-green-500 text-white px-2 py-1"
-          >
-            Accept
-          </button>
+        <div className="flex gap-2 mt-4">
+          
+          {/* FREE EVENT */}
+          {!inv.event.isPaid && (
+            <button
+              onClick={accept}
+              disabled={loading}
+              className="bg-green-500 text-white px-3 py-2 rounded"
+            >
+              {loading
+                ? "Processing..."
+                : "Accept"}
+            </button>
+          )}
 
+          {/* REJECT */}
           <button
             onClick={reject}
-            className="bg-red-500 text-white px-2 py-1"
+            disabled={loading}
+            className="bg-red-500 text-white px-3 py-2 rounded"
           >
-            Reject
+            {loading
+              ? "Processing..."
+              : "Reject"}
           </button>
 
+          {/* PAID EVENT */}
           {inv.event.isPaid && (
             <button
               onClick={payAndAccept}
-              className="bg-blue-500 text-white px-2 py-1"
+              disabled={loading}
+              className="bg-blue-500 text-white px-3 py-2 rounded"
             >
-              Pay & Accept
+              {loading
+                ? "Processing..."
+                : "Pay & Accept"}
             </button>
           )}
         </div>

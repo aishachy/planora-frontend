@@ -27,6 +27,14 @@ export default function DashboardLayout({
             Create Event
           </Link>
 
+          <Link href="/dashboard/invitation" className="block hover:text-black">
+            Invitations
+          </Link>
+
+          <Link href="/dashboard/register" className="block hover:text-black">
+            My Registrations
+          </Link>
+
         </nav>
 
       </aside>
