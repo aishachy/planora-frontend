@@ -31,7 +31,7 @@ export default function DashboardLayout({
             Invitations
           </Link>
 
-          <Link href="/dashboard/invitation/sentInvitationList" className="block hover:text-black">
+          <Link href="/dashboard/invitation/sentInvitations" className="block hover:text-black">
             Sent Invitations
           </Link>
 

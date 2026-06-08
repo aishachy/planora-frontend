@@ -1,22 +1,22 @@
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-/**
- * Safe JSON parser (prevents HTML crash)
- */
+/* -----------------------------------------
+   SAFE JSON PARSER
+------------------------------------------*/
 const safeJson = async (res: Response) => {
     const text = await res.text();
 
     try {
         return JSON.parse(text);
     } catch (err) {
-        console.error("❌ Non-JSON response from server:", text);
+        console.error("❌ Non-JSON response:", text);
         throw new Error("Server error: Expected JSON but received HTML");
     }
 };
 
-/**
- * 🔥 GET MY INVITATIONS
- */
+/* -----------------------------------------
+   GET MY INVITATIONS (RECEIVED)
+------------------------------------------*/
 export const getMyInvitations = async (token: string) => {
     const res = await fetch(`${API}/api/invitation/me`, {
         method: "GET",
@@ -25,9 +25,8 @@ export const getMyInvitations = async (token: string) => {
         },
     });
 
-    const data = await res.json();
+    const data = await safeJson(res);
 
-    // 🔥 handle expired token cleanly
     if (res.status === 401) {
         localStorage.removeItem("token");
         throw new Error("Session expired. Please login again.");
@@ -40,27 +39,29 @@ export const getMyInvitations = async (token: string) => {
     return data;
 };
 
+/* -----------------------------------------
+   GET SENT INVITATIONS
+------------------------------------------*/
 export const getSentInvitations = async (token: string) => {
-  const res = await fetch(
-    `${API}/api/invitation/sentInvitations`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await fetch(`${API}/api/invitation/sentInvitations`, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch sent invitations");
     }
-  );
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch sent invitations");
-  }
-
-  return res.json();
+    return data;
 };
 
-/**
- * 📩 SEND INVITATION (ORGANIZER ONLY)
- */
+/* -----------------------------------------
+   SEND INVITATION
+------------------------------------------*/
 export const sendInvitation = async (
     eventId: string,
     userId: string,
@@ -84,9 +85,9 @@ export const sendInvitation = async (
     return data;
 };
 
-/**
- * ✅ ACCEPT INVITATION
- */
+/* -----------------------------------------
+   ACCEPT INVITATION
+------------------------------------------*/
 export const acceptInvitation = async (id: string, token: string) => {
     const res = await fetch(`${API}/api/invitation/${id}/accept`, {
         method: "PATCH",
@@ -104,9 +105,9 @@ export const acceptInvitation = async (id: string, token: string) => {
     return data;
 };
 
-/**
- * ❌ REJECT INVITATION
- */
+/* -----------------------------------------
+   REJECT INVITATION
+------------------------------------------*/
 export const rejectInvitation = async (id: string, token: string) => {
     const res = await fetch(`${API}/api/invitation/${id}/reject`, {
         method: "PATCH",
@@ -124,9 +125,9 @@ export const rejectInvitation = async (id: string, token: string) => {
     return data;
 };
 
-/**
- * 💳 PAY & ACCEPT INVITATION
- */
+/* -----------------------------------------
+   PAY & ACCEPT INVITATION
+------------------------------------------*/
 export const payAndAcceptInvitation = async (
     id: string,
     token: string

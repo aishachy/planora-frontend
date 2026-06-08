@@ -110,6 +110,7 @@ export default function InviteUserList({
 }: {
   eventId: string;
 }) {
+  console.log("INVITE USER LIST RENDERED");
   const [users, setUsers] = useState<any[]>(
     []
   );
@@ -123,13 +124,9 @@ export default function InviteUserList({
 
         if (!token) return;
 
-        const result =
-          await getAllUsers(token);
+        const result = await getAllUsers(token);
 
-        console.log(
-          "USERS:",
-          result
-        );
+        console.log("USERS RESPONSE:", result);
 
         setUsers(result.data || []);
 

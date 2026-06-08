@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMyInvitations } from "../../services/invitationService";
 import InvitationCard from "../../../components/invitation/invitationCard";
 
@@ -10,29 +10,38 @@ export default function InvitationsPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
-      if (!token) return setData([]);
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("token")
+          : null;
+
+      if (!token) {
+        setData([]);
+        return;
+      }
 
       const res = await getMyInvitations(token);
 
-      setData(res.data ?? res ?? []);
+      // safer fallback handling
+      setData(res?.data ?? []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load invitations:", err);
+      setData([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   return (
-    <div>
+    <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
         Invitations
       </h1>
@@ -49,7 +58,7 @@ export default function InvitationsPage() {
             <InvitationCard
               key={inv.id}
               inv={inv}
-              refresh={load}   // 🔥 important
+              refresh={load}
             />
           ))}
         </div>
