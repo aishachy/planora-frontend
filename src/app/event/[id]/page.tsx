@@ -7,6 +7,8 @@ import { useParams } from "next/navigation";
 import ReviewList from "../../../components/reviews/reviewList";
 import ReviewForm from "../../../components/reviews/reviewForm";
 
+import PaymentButton from "../../../components/paymentButton";
+
 import {
   getMyInvitations,
   acceptInvitation,
@@ -41,12 +43,14 @@ export default function EventDetailsPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [user, setUser] = useState<any>(null);
-
+  const [registration, setRegistration] = useState<any>(null);
+  console.log("CURRENT USER =", user);
+  console.log("CURRENT EVENT =", event);
+  console.log("CURRENT REGISTRATION =", registration);
   const [myInvitation, setMyInvitation] = useState<any>(null);
-
   const [refreshReviews, setRefreshReviews] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  // ---------------------------
   // ---------------------------
   // FETCH EVENT
   // ---------------------------
@@ -80,23 +84,78 @@ export default function EventDetailsPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/auth/me",
-          { credentials: "include" }
-        );
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setUser(null);
+          return;
+        }
+
+        const res = await fetch("http://localhost:5000/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await res.json();
-        setUser(data?.data || null);
+
+        console.log("AUTH ME RESPONSE:", data);
+
+        const user = data.data || data.user || data;
+
+        if (user) {
+          setUser(user);
+        } else {
+          setUser(null);
+        }
       } catch (err) {
         console.error("Failed to load user", err);
+        setUser(null);
       }
     };
 
     fetchUser();
   }, []);
 
+  useEffect(() => {
+    const fetchRegistration = async () => {
+      const token = localStorage.getItem("token");
+      if (!token || !event?.id) return;
+
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/registration/event/${event?.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        console.log("EVENT ID:", event?.id);
+        console.log("REGISTRATION API RESPONSE", data);
+        console.log("CURRENT EVENT ID:", event?.id);
+        console.log("FETCH URL:",
+          `http://localhost:5000/api/registration/event/${event?.id}`
+        );
+        if (data.success) {
+          setRegistration(data.data);
+        } else {
+          setRegistration(null);
+        }
+      } catch (err) {
+        console.error("Failed to load registration", err);
+      }
+    };
+
+    fetchRegistration();
+  }, [event?.id]);
+
   // ---------------------------
-  // FETCH INVITATION FOR THIS EVENT
+  // FETCH INVITATION
   // ---------------------------
   useEffect(() => {
     const loadInvitation = async () => {
@@ -124,24 +183,14 @@ export default function EventDetailsPage() {
 
   const isOwner = user?.id === event?.organizer?.id;
 
-  // ---------------------------
-  // EVENT BUTTON TEXT
-  // ---------------------------
-  const getButtonText = () => {
-    if (event.isPublic && !event.isPaid) return "Join";
-    if (event.isPublic && event.isPaid) return "Pay & Join";
-    if (!event.isPublic && !event.isPaid)
-      return "Request to Join";
-    return "Pay & Request";
-  };
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
 
   // ---------------------------
   // INVITATION ACTIONS
   // ---------------------------
-  const token = typeof window !== "undefined"
-    ? localStorage.getItem("token")
-    : null;
-
   const handleAccept = async () => {
     await acceptInvitation(myInvitation.id, token!);
     setMyInvitation({ ...myInvitation, status: "ACCEPTED" });
@@ -154,7 +203,18 @@ export default function EventDetailsPage() {
 
   const handlePay = async () => {
     await payAndAcceptInvitation(myInvitation.id, token!);
-    setMyInvitation({ ...myInvitation, status: "ACCEPTED" });
+
+    setMyInvitation({
+      ...myInvitation,
+      status: "PENDING_PAYMENT_APPROVAL",
+    });
+  };
+
+  const getButtonText = () => {
+    if (event.isPublic && !event.isPaid) return "Join Instantly";
+    if (event.isPublic && event.isPaid) return "Pay & Join";
+    if (!event.isPublic && !event.isPaid) return "Request to Join";
+    return "Pay & Request Access";
   };
 
   return (
@@ -193,20 +253,81 @@ export default function EventDetailsPage() {
           <p>📅 {new Date(event.date).toLocaleDateString()}</p>
           <p>⏰ {event.time}</p>
           <p>📍 {event.venue || "Online Event"}</p>
-
           <p>👤 {event.organizer?.name}</p>
           <p>💳 {event.isPaid ? `$${event.fee}` : "Free"}</p>
         </div>
 
-        {/* DESCRIPTION */}
-        <p className="text-slate-600 mb-6">
-          {event.description}
-        </p>
+        {/* Description */}
+        <p className="text-slate-600 mb-6">{event.description}</p>
 
-        {/* JOIN BUTTON */}
-        <button className="bg-indigo-600 text-white px-6 py-3 rounded-xl">
-          {getButtonText()}
-        </button>
+        {/* Participation Info */}
+        <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+          <h3 className="font-semibold text-blue-700 mb-2">
+            Participation Type
+          </h3>
+
+          {event.isPublic && !event.isPaid && (
+            <p>Free Public → Join instantly</p>
+          )}
+          {event.isPublic && event.isPaid && (
+            <p>Paid Public → Payment required</p>
+          )}
+          {!event.isPublic && !event.isPaid && (
+            <p>Private Free → Request to join</p>
+          )}
+          {!event.isPublic && event.isPaid && (
+            <p>Private Paid → Payment required</p>
+          )}
+        </div>
+
+        {/* =========================
+            JOIN / PAYMENT BUTTON (FIXED)
+        ========================= */}
+        <div className="mb-4 p-4 border rounded bg-gray-50">
+          <p>Paid Event: {String(event?.isPaid)}</p>
+
+          <p>
+            Invitation:{" "}
+            {myInvitation ? "YES" : "NO"}
+          </p>
+
+          <p>
+            Registration:{" "}
+            {registration ? registration.id : "NONE"}
+          </p>
+        </div>
+        <div className="mb-6 border p-4 rounded bg-green-50">
+          <p>
+            Event Paid: <b>{String(event?.isPaid)}</b>
+          </p>
+
+          <p>
+            Registration ID:{" "}
+            <b>{registration?.id || "NONE"}</b>
+          </p>
+
+          <p>
+            Registration Status:{" "}
+            <b>{registration?.status || "NONE"}</b>
+          </p>
+
+          {event?.isPaid &&
+            registration &&
+            registration.status === "APPROVED" ? (
+            <PaymentButton
+              registrationId={registration.id}
+              amount={event.fee || 0}
+            />
+          ) : (
+            <button
+              disabled
+              className="bg-gray-400 text-white px-6 py-3 rounded-xl"
+            >
+              Pay Now Not Available
+            </button>
+          )}
+        </div>
+
 
         {/* OWNER CONTROLS */}
         {isOwner && (
@@ -214,64 +335,59 @@ export default function EventDetailsPage() {
             <button className="px-4 py-2 bg-blue-600 text-white rounded">
               Manage Event
             </button>
-
             <button className="px-4 py-2 bg-yellow-500 text-white rounded">
               Edit
             </button>
-
             <button className="px-4 py-2 bg-red-600 text-white rounded">
               Delete
             </button>
           </div>
         )}
 
-        {/* ---------------- INVITATION SECTION ---------------- */}
-
+        {/* INVITATION SECTION */}
         <div className="mt-6 border p-4 rounded bg-yellow-50">
           {myInvitation ? (
             <>
-              <p className="font-semibold">
-                🎉 You are invited to this event
+              <p className="font-semibold">🎉 You are invited</p>
+
+              <p>
+                Status: <b>{myInvitation.status}</b>
               </p>
 
-              <p>Status: {myInvitation.status}</p>
-
-              {myInvitation.status === "PENDING" && (
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={handleAccept}
-                    className="bg-green-500 text-white px-3 py-1 rounded"
-                  >
-                    Accept
-                  </button>
-
-                  <button
-                    onClick={handleReject}
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Reject
-                  </button>
-
-                  {event.isPaid && (
+              {(myInvitation.status === "PENDING" ||
+                myInvitation.status === "PENDING_PAYMENT") && (
+                  <div className="flex gap-2 mt-3">
                     <button
-                      onClick={handlePay}
-                      className="bg-blue-500 text-white px-3 py-1 rounded"
+                      onClick={handleAccept}
+                      className="bg-green-500 text-white px-3 py-1 rounded"
                     >
-                      Pay & Accept
+                      Accept
                     </button>
-                  )}
-                </div>
-              )}
+
+                    <button
+                      onClick={handleReject}
+                      className="bg-red-500 text-white px-3 py-1 rounded"
+                    >
+                      Reject
+                    </button>
+
+                    {event.isPaid && (
+                      <button
+                        onClick={handlePay}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Pay & Accept
+                      </button>
+                    )}
+                  </div>
+                )}
             </>
           ) : (
-            <p className="text-gray-600">
-              You are not invited to this event
-            </p>
+            <p>You are not invited</p>
           )}
         </div>
 
-        {/* ---------------- REVIEWS ---------------- */}
-
+        {/* REVIEWS */}
         <ReviewForm
           eventId={id ?? ""}
           refreshReviews={() => setRefreshReviews(!refreshReviews)}
@@ -280,10 +396,12 @@ export default function EventDetailsPage() {
         {id && (
           <ReviewList
             eventId={id}
-            key={refreshReviews ? "1" : "0"} refresh={0}          />
+            key={refreshReviews ? "1" : "0"}
+            refresh={0}
+          />
         )}
-
       </div>
     </div>
   );
 }
+

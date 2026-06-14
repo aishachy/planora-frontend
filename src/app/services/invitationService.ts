@@ -43,20 +43,16 @@ export const getMyInvitations = async (token: string) => {
    GET SENT INVITATIONS
 ------------------------------------------*/
 export const getSentInvitations = async (token: string) => {
-    const res = await fetch(`${API}/api/invitation/sentInvitations`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+  const res = await fetch(`${API}/api/invitation/sentInvitations`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    const data = await safeJson(res);
+  const data = await res.json();
 
-    if (!res.ok) {
-        throw new Error(data.message || "Failed to fetch sent invitations");
-    }
-
-    return data;
+  return data;
 };
 
 /* -----------------------------------------

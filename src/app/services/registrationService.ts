@@ -9,6 +9,34 @@ export const getEventRegistrations = async (eventId: string | undefined, p0: str
   return res.json();
 };
 
+export const getMyRegistrations =
+  async () => {
+    const token =
+      localStorage.getItem("token");
+
+    const res = await fetch(
+      `${API_URL}/api/registration/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return res.json();
+  };
+
+export const getRegistrationById = async (id: string) => {
+  const res = await fetch(
+    `${API_URL}/api/registration/${id}`,
+    {
+      credentials: "include",
+    }
+  );
+
+  return res.json();
+};
+
 export const approveRegistration = async (id: string) => {
   const res = await fetch(`${API_URL}/api/registration/approve/${id}`, {
     method: "PATCH",
