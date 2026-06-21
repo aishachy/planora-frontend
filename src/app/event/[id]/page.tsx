@@ -7,8 +7,6 @@ import { useParams } from "next/navigation";
 import ReviewList from "../../../components/reviews/reviewList";
 import ReviewForm from "../../../components/reviews/reviewForm";
 
-import PaymentButton from "../../../components/paymentButton";
-
 import {
   getMyInvitations,
   acceptInvitation,
