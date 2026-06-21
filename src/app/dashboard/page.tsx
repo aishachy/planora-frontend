@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useState } from "react";
 
@@ -18,25 +19,14 @@ export default function DashboardPage() {
           credentials: "include",
         });
 
-        if (!res.ok) {
-          throw new Error("Failed to fetch events");
-        }
+        if (!res.ok) throw new Error("Failed to fetch events");
 
         const data = await res.json();
 
-        console.log("API RESPONSE:", data);
-
-        // ✅ handle ALL possible backend shapes
-        const events =
-          data?.data ||
-          data?.events ||
-          data ||
-          [];
+        const events = data?.data || data?.events || data || [];
 
         setEventsCount(Array.isArray(events) ? events.length : 0);
-
       } catch (err: any) {
-        console.log(err);
         setError(err.message || "Something went wrong");
       } finally {
         setLoading(false);
@@ -46,39 +36,103 @@ export default function DashboardPage() {
     load();
   }, []);
 
+  // ======================
+  // LOADING UI (PREMIUM)
+  // ======================
   if (loading) {
-    return <div className="p-6">Loading dashboard...</div>;
+    return (
+      <div className="p-6 space-y-6 animate-pulse">
+
+        <div className="h-8 w-48 bg-gray-200 rounded" />
+
+        <div className="grid md:grid-cols-3 gap-4">
+
+          <div className="h-28 bg-gray-200 rounded-xl" />
+          <div className="h-28 bg-gray-200 rounded-xl" />
+          <div className="h-28 bg-gray-200 rounded-xl" />
+
+        </div>
+
+      </div>
+    );
   }
 
+  // ======================
+  // ERROR UI
+  // ======================
   if (error) {
-    return <div className="p-6 text-red-500">{error}</div>;
+    return (
+      <div className="p-6 text-red-500 font-medium">
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 p-6">
 
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      {/* HEADER */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Dashboard
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Overview of your events and activity
+        </p>
+      </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      {/* STATS GRID */}
+      <div className="grid md:grid-cols-3 gap-5">
 
-        <div className="p-6 bg-white border rounded-xl">
-          <h2 className="text-gray-500">My Events</h2>
-          <p className="text-3xl font-bold">{eventsCount}</p>
+        {/* MY EVENTS */}
+        <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition">
+          <p className="text-gray-500 text-sm">
+            My Events
+          </p>
+          <h2 className="text-3xl font-bold mt-2">
+            {eventsCount}
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            Total events created by you
+          </p>
         </div>
 
-        <div className="p-6 bg-white border rounded-xl">
-          <h2 className="text-gray-500">Status</h2>
-          <p className="text-xl">Active</p>
+        {/* STATUS */}
+        <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition">
+          <p className="text-gray-500 text-sm">
+            Account Status
+          </p>
+
+          <div className="mt-2 flex items-center gap-2">
+            <span className="h-2 w-2 bg-green-500 rounded-full" />
+            <p className="text-lg font-semibold text-gray-800">
+              Active
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-1">
+            Everything is running smoothly
+          </p>
         </div>
 
-        <div className="p-6 bg-white border rounded-xl">
-          <h2 className="text-gray-500">Quick Action</h2>
+        {/* QUICK ACTION */}
+        <div className="bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition">
+          <p className="text-gray-500 text-sm">
+            Quick Action
+          </p>
+
           <a
-            href="/dashboard/events/create"
-            className="text-blue-600 underline"
+            href="/dashboard/event/create"
+            className="inline-flex mt-3 items-center justify-center
+                       px-4 py-2 rounded-lg bg-black text-white text-sm
+                       hover:bg-gray-900 transition"
           >
             + Create Event
           </a>
+
+          <p className="text-xs text-gray-400 mt-2">
+            Start building a new event
+          </p>
         </div>
 
       </div>

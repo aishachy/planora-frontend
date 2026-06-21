@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
 import {
@@ -11,7 +12,7 @@ import {
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function InvitationCard({ inv, refresh }: any) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const token =
     typeof window !== "undefined"
@@ -19,59 +20,53 @@ export default function InvitationCard({ inv, refresh }: any) {
       : null;
 
   // ======================
-  // ACCEPT INVITATION
+  // ACTIONS
   // ======================
   const accept = async () => {
     try {
+      setLoading("accept");
       await acceptInvitation(inv.id, token!);
       refresh();
     } catch (error: any) {
       alert(error.message);
+    } finally {
+      setLoading(null);
     }
   };
 
-  // ======================
-  // REJECT INVITATION
-  // ======================
   const reject = async () => {
     try {
+      setLoading("reject");
       await rejectInvitation(inv.id, token!);
       refresh();
     } catch (error: any) {
       alert(error.message);
+    } finally {
+      setLoading(null);
     }
   };
 
-  // ======================
-  // APPROVE PAYMENT
-  // ======================
   const approvePayment = async () => {
     try {
+      setLoading("approve");
       await approvePaymentInvitation(inv.id, token!);
       refresh();
     } catch (error: any) {
       alert(error.message);
+    } finally {
+      setLoading(null);
     }
   };
 
-  // ======================
-  // HANDLE PAYMENT
-  // ======================
   const handlePay = async () => {
     try {
-      setLoading(true);
+      setLoading("pay");
 
       const registrationId = inv.registration?.id;
-
       const amount = inv.event?.fee;
 
-      if (!registrationId) {
-        alert("Missing registration ID");
-        return;
-      }
-
-      if (!amount || amount <= 0) {
-        alert("Invalid amount");
+      if (!registrationId || !amount) {
+        alert("Missing payment data");
         return;
       }
 
@@ -79,9 +74,7 @@ export default function InvitationCard({ inv, refresh }: any) {
         `${API}/api/payment/create-checkout-session`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             registrationId,
             amount,
@@ -91,93 +84,119 @@ export default function InvitationCard({ inv, refresh }: any) {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to create payment");
-      }
+      if (!res.ok) throw new Error(data.message || "Payment failed");
 
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
     } catch (err: any) {
       alert(err.message || "Payment failed");
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
+  // ======================
+  // STATUS BADGE
+  // ======================
+  const badge = (text: string, color: string) => (
+    <span className={`text-xs px-2 py-1 rounded-full ${color}`}>
+      {text}
+    </span>
+  );
+
   return (
-    <div className="border p-4 rounded bg-white shadow-sm">
-      {/* EVENT */}
-      <h2 className="text-xl font-bold">{inv.event?.title}</h2>
+    <div className="border rounded-2xl bg-white shadow-sm hover:shadow-md transition p-5 space-y-4">
 
-      <div className="mt-2 text-sm text-gray-600 space-y-1">
-        <p>Date: {inv.event?.date}</p>
-        <p>Venue: {inv.event?.venue}</p>
-        <p>Type: {inv.event?.isPaid ? "Paid" : "Free"}</p>
+      {/* HEADER */}
+      <div className="flex justify-between items-start gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {inv.event?.title}
+          </h2>
 
-        {inv.event?.isPaid && <p>Fee: ৳{inv.event?.fee}</p>}
+          <p className="text-sm text-gray-500 mt-1">
+            📅 {inv.event?.date} • 📍 {inv.event?.venue}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2 items-end">
+          {inv.event?.isPaid
+            ? badge("Paid Event", "bg-yellow-100 text-yellow-700")
+            : badge("Free Event", "bg-green-100 text-green-700")}
+
+          {badge(inv.status, "bg-gray-100 text-gray-700")}
+        </div>
       </div>
 
-      {/* USER */}
-      <p className="mt-3 font-semibold">
-        User: {inv.user?.name ?? "Unknown"} ({inv.user?.email ?? "N/A"})
-      </p>
-
-      {/* INVITER */}
-      <p className="text-sm text-gray-500">
-        Invited By: {inv.inviter?.name ?? "Unknown"}
-      </p>
-
-      {/* STATUS */}
-      <p className="text-sm text-gray-500">
-        Invitation Status: {inv.status}
-      </p>
-
-      {inv.registration?.status && (
-        <p className="text-sm text-gray-500">
-          Registration Status: {inv.registration.status}
+      {/* USER INFO */}
+      <div className="border-t pt-3 space-y-1 text-sm text-gray-600">
+        <p className="font-medium text-gray-900">
+          {inv.user?.name ?? "Unknown User"}
         </p>
-      )}
+        <p>{inv.user?.email ?? "N/A"}</p>
+        <p className="text-xs text-gray-500">
+          Invited by: {inv.inviter?.name ?? "Unknown"}
+        </p>
+      </div>
 
-      {/* FREE EVENT ACTIONS */}
-      {inv.status === "PENDING" && !inv.event?.isPaid && (
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={accept}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Accept
-          </button>
-
-          <button
-            onClick={reject}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Reject
-          </button>
+      {/* PAYMENT INFO */}
+      {inv.event?.isPaid && (
+        <div className="text-sm text-gray-600 space-y-1">
+          <p>Fee: <span className="font-semibold">৳{inv.event?.fee}</span></p>
+          <p>Status: {inv.registration?.status}</p>
         </div>
       )}
 
-      {/* PAID EVENT - PAYMENT */}
-      {inv.event?.isPaid && inv.registration?.status === "PENDING" && (
-        <button
-          onClick={handlePay}
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
-        >
-          {loading ? "Processing..." : "Pay Now"}
-        </button>
-      )}
+      {/* ACTIONS */}
+      <div className="flex flex-wrap gap-2 pt-2">
 
-      {/* ORGANIZER APPROVAL */}
-      {inv.registration?.status === "APPROVED" && (
-        <button
-          onClick={approvePayment}
-          className="bg-purple-600 text-white px-4 py-2 rounded mt-4"
-        >
-          Approve Payment
-        </button>
-      )}
+        {/* FREE EVENT */}
+        {inv.status === "PENDING" && !inv.event?.isPaid && (
+          <>
+            <button
+              onClick={accept}
+              disabled={loading !== null}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm
+                         hover:bg-green-700 transition disabled:opacity-50"
+            >
+              {loading === "accept" ? "Accepting..." : "Accept"}
+            </button>
+
+            <button
+              onClick={reject}
+              disabled={loading !== null}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm
+                         hover:bg-red-700 transition disabled:opacity-50"
+            >
+              {loading === "reject" ? "Rejecting..." : "Reject"}
+            </button>
+          </>
+        )}
+
+        {/* PAYMENT */}
+        {inv.event?.isPaid && inv.registration?.status === "PENDING" && (
+          <button
+            onClick={handlePay}
+            disabled={loading !== null}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm
+                       hover:bg-blue-700 transition disabled:opacity-50"
+          >
+            {loading === "pay" ? "Redirecting..." : "Pay Now"}
+          </button>
+        )}
+
+        {/* ORGANIZER APPROVAL */}
+        {inv.registration?.status === "APPROVED" && (
+          <button
+            onClick={approvePayment}
+            disabled={loading !== null}
+            className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm
+                       hover:bg-purple-700 transition disabled:opacity-50"
+          >
+            {loading === "approve" ? "Processing..." : "Approve Payment"}
+          </button>
+        )}
+
+      </div>
     </div>
   );
 }

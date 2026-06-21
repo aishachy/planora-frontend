@@ -74,7 +74,7 @@ export const Slider = () => {
                     {event.title}
                   </h3>
 
-                  <div className="space-y-2 text-sm text-gray-400 mb-6">
+                  <div className="space-y-2 text-sm mb-6">
 
                     <div className="flex items-center gap-2">
                       <CalendarDays size={16} />

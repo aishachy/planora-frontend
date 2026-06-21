@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -11,6 +12,7 @@ import {
   CardTitle,
   CardDescription,
 } from "../../components/ui/card";
+
 import {
   Field,
   FieldGroup,
@@ -20,7 +22,7 @@ import {
 
 import { registerUser } from "../../app/services/authService";
 import { useAuth } from "../../app/providers/authProvider";
-import { toastError, toastSuccess } from "../../lib/swal"
+import { toastError, toastSuccess } from "../../lib/swal";
 import { Input } from "@base-ui/react";
 
 type Role = "USER" | "ADMIN";
@@ -43,7 +45,6 @@ export function RegisterForm({
     e.preventDefault();
     setLoading(true);
 
-    // Local password mismatch check
     if (password !== confirmPassword) {
       toastError("Passwords do not match");
       setLoading(false);
@@ -53,12 +54,12 @@ export function RegisterForm({
     try {
       const user = await registerUser({ name, email, password, role });
 
-
       localStorage.setItem("user", JSON.stringify(user));
       setUser(user);
-      toastSuccess("Registration successful!");
+
+      toastSuccess("Welcome 🎉 Account created successfully");
+
       router.push("/dashboard");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toastError(err?.message || "Registration failed");
     } finally {
@@ -67,79 +68,109 @@ export function RegisterForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>Enter your details to sign up</CardDescription>
+    <div className={cn("min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900", className)} {...props}>
+
+      {/* glow background */}
+      <div className="absolute w-112.5 h-112.5 bg-indigo-600/30 blur-3xl rounded-full -top-40 -left-40" />
+      <div className="absolute w-112.5 h-112.5 bg-purple-600/30 blur-3xl rounded-full -bottom-40 -right-40" />
+
+      <Card className="relative w-full max-w-lg bg-white/10 border border-white/10 backdrop-blur-xl shadow-2xl rounded-3xl">
+
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-3xl text-white font-bold">
+            Create Account
+          </CardTitle>
+
+          <CardDescription className="text-gray-300">
+            Join and start managing your events
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <FieldGroup>
+            <FieldGroup className="space-y-4">
+
+              {/* NAME */}
               <Field>
-                <FieldLabel>Name</FieldLabel>
+                <FieldLabel className="text-gray-200">Name</FieldLabel>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Field>
 
+              {/* EMAIL */}
               <Field>
-                <FieldLabel>Email</FieldLabel>
+                <FieldLabel className="text-gray-200">Email</FieldLabel>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Field>
 
+              {/* PASSWORD */}
               <Field>
-                <FieldLabel>Password</FieldLabel>
+                <FieldLabel className="text-gray-200">Password</FieldLabel>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Field>
 
+              {/* CONFIRM PASSWORD */}
               <Field>
-                <FieldLabel>Confirm Password</FieldLabel>
+                <FieldLabel className="text-gray-200">Confirm Password</FieldLabel>
                 <Input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </Field>
 
+              {/* ROLE */}
               <Field>
-                <FieldLabel>Role</FieldLabel>
+                <FieldLabel className="text-gray-200">Role</FieldLabel>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
-                  className="border rounded px-3 py-2 w-full"
+                  className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white"
                 >
                   <option value="USER">User</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </Field>
 
-              <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Registering..." : "Register"}
-                </Button>
+              {/* BUTTON */}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:opacity-90 transition"
+              >
+                {loading ? "Creating account..." : "Register"}
+              </Button>
 
-                <FieldDescription className="text-center mt-2">
-                  Already have an account? <a href="/login">Login</a>
-                </FieldDescription>
-              </Field>
+              {/* LOGIN LINK */}
+              <FieldDescription className="text-center text-gray-300 mt-3">
+                Already have an account?{" "}
+                <a href="/login" className="text-indigo-400 hover:underline">
+                  Login
+                </a>
+              </FieldDescription>
+
             </FieldGroup>
           </form>
         </CardContent>
+
       </Card>
     </div>
   );

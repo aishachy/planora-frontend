@@ -116,7 +116,7 @@ export const HeroSection = () => {
               </CardContent>
 
               <CardFooter>
-                <button className="flex items-center gap-2 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300">
+                <button className="w-full flex items-center justify-center gap-2  text-black py-3 rounded-full font-medium hover:bg-gray-300 transition">
                   View Event
                   <ArrowRight className="h-4 w-4" />
                 </button>

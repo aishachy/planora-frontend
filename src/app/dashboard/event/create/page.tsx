@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ const API_URL = "http://localhost:5000";
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -33,100 +35,143 @@ export default function CreateEventPage() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    await fetch(`${API_URL}/api/event`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(form),
-    });
+    try {
+      setLoading(true);
 
-    router.push("/dashboard/event");
+      await fetch(`${API_URL}/api/event`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+
+      router.push("/dashboard/event");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Create Event</h1>
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-3xl mx-auto">
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-        <input
-          name="title"
-          placeholder="Title"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <textarea
-          name="description"
-          placeholder="Description"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <input
-          type="date"
-          name="date"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <input
-          type="time"
-          name="time"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <input
-          name="venue"
-          placeholder="Venue"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <input
-          name="eventLink"
-          placeholder="Event Link"
-          className="w-full p-3 border rounded"
-          onChange={handleChange}
-        />
-
-        <div className="flex gap-6">
-          <label>
-            <input
-              type="checkbox"
-              name="isPublic"
-              checked={form.isPublic}
-              onChange={handleChange}
-            />
-            Public
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              name="isPaid"
-              checked={form.isPaid}
-              onChange={handleChange}
-            />
-            Paid
-          </label>
+        {/* HEADER */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Create Event
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Build and publish your event in minutes
+          </p>
         </div>
 
-        {form.isPaid && (
+        {/* CARD */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl shadow-sm border p-6 space-y-6"
+        >
+
+          {/* BASIC INFO */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Basic Information
+            </h2>
+
+            <input
+              name="title"
+              placeholder="Event Title"
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+              onChange={handleChange}
+            />
+
+            <textarea
+              name="description"
+              placeholder="Event Description"
+              className="w-full px-4 py-3 border rounded-xl h-28 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* DATE & TIME */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="date"
+              name="date"
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+              onChange={handleChange}
+            />
+
+            <input
+              type="time"
+              name="time"
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* LOCATION */}
           <input
-            name="fee"
-            type="number"
-            placeholder="Fee"
-            className="w-full p-3 border rounded"
+            name="venue"
+            placeholder="Venue / Location"
+            className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
             onChange={handleChange}
           />
-        )}
 
-        <button className="bg-green-600 text-white px-6 py-3 rounded">
-          Create Event
-        </button>
-      </form>
+          <input
+            name="eventLink"
+            placeholder="Event Link (optional)"
+            className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+            onChange={handleChange}
+          />
+
+          {/* SETTINGS */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="isPublic"
+                checked={form.isPublic}
+                onChange={handleChange}
+              />
+              Public Event
+            </label>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="isPaid"
+                checked={form.isPaid}
+                onChange={handleChange}
+              />
+              Paid Event
+            </label>
+
+          </div>
+
+          {/* FEE */}
+          {form.isPaid && (
+            <input
+              name="fee"
+              type="number"
+              placeholder="Ticket Fee (৳)"
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
+              onChange={handleChange}
+            />
+          )}
+
+          {/* SUBMIT */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded-xl font-medium
+                       hover:bg-gray-900 transition disabled:opacity-50"
+          >
+            {loading ? "Creating Event..." : "Create Event"}
+          </button>
+
+        </form>
+      </div>
     </div>
   );
 }

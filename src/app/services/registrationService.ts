@@ -1,4 +1,4 @@
-"use client"
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -66,4 +66,36 @@ export const banParticipant = async (userId: string, eventId: string) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, eventId }),
   });
+};
+
+export const getEventRegistrations = async (
+  eventId: string,
+  status?: string
+) => {
+  const token = localStorage.getItem("token");
+
+  const url = `${API_URL}/api/registration/event/${eventId}/all`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.message || "Failed to fetch registrations");
+  }
+
+  // filter by status on frontend (since backend route returns all)
+  const filtered =
+    status
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (data?.data || []).filter((r: any) => r.status === status)
+      : data?.data || [];
+
+  return { data: filtered };
 };

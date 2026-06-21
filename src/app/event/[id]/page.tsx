@@ -217,189 +217,223 @@ export default function EventDetailsPage() {
     return "Pay & Request Access";
   };
 
-  return (
-    <div className="min-h-screen bg-slate-100">
 
-      {/* Banner */}
-      <div className="h-96 bg-linear-to-r from-indigo-500 to-purple-500 flex items-center justify-center">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200">
+
+      {/* HERO BANNER */}
+      <div className="relative h-[420px] overflow-hidden">
         {event.image ? (
           <img
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-105"
           />
         ) : (
-          <h1 className="text-white text-4xl font-bold">
-            Event Image Here
-          </h1>
-        )}
-      </div>
-
-      {/* Main Card */}
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 -mt-16 relative z-10">
-
-        {/* Title */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">{event.title}</h1>
-
-          <span className="bg-slate-100 px-4 py-2 rounded-full text-sm font-medium">
-            {event.isPublic ? "Public" : "Private"} •{" "}
-            {event.isPaid ? "Paid" : "Free"}
-          </span>
-        </div>
-
-        {/* Event Details */}
-        <div className="grid md:grid-cols-2 gap-6 text-slate-700 mb-8">
-          <p>📅 {new Date(event.date).toLocaleDateString()}</p>
-          <p>⏰ {event.time}</p>
-          <p>📍 {event.venue || "Online Event"}</p>
-          <p>👤 {event.organizer?.name}</p>
-          <p>💳 {event.isPaid ? `$${event.fee}` : "Free"}</p>
-        </div>
-
-        {/* Description */}
-        <p className="text-slate-600 mb-6">{event.description}</p>
-
-        {/* Participation Info */}
-        <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
-          <h3 className="font-semibold text-blue-700 mb-2">
-            Participation Type
-          </h3>
-
-          {event.isPublic && !event.isPaid && (
-            <p>Free Public → Join instantly</p>
-          )}
-          {event.isPublic && event.isPaid && (
-            <p>Paid Public → Payment required</p>
-          )}
-          {!event.isPublic && !event.isPaid && (
-            <p>Private Free → Request to join</p>
-          )}
-          {!event.isPublic && event.isPaid && (
-            <p>Private Paid → Payment required</p>
-          )}
-        </div>
-
-        {/* =========================
-            JOIN / PAYMENT BUTTON (FIXED)
-        ========================= */}
-        <div className="mb-4 p-4 border rounded bg-gray-50">
-          <p>Paid Event: {String(event?.isPaid)}</p>
-
-          <p>
-            Invitation:{" "}
-            {myInvitation ? "YES" : "NO"}
-          </p>
-
-          <p>
-            Registration:{" "}
-            {registration ? registration.id : "NONE"}
-          </p>
-        </div>
-        <div className="mb-6 border p-4 rounded bg-green-50">
-          <p>
-            Event Paid: <b>{String(event?.isPaid)}</b>
-          </p>
-
-          <p>
-            Registration ID:{" "}
-            <b>{registration?.id || "NONE"}</b>
-          </p>
-
-          <p>
-            Registration Status:{" "}
-            <b>{registration?.status || "NONE"}</b>
-          </p>
-
-          {event?.isPaid &&
-            registration &&
-            registration.status === "APPROVED" ? (
-            <PaymentButton
-              registrationId={registration.id}
-              amount={event.fee || 0}
-            />
-          ) : (
-            <button
-              disabled
-              className="bg-gray-400 text-white px-6 py-3 rounded-xl"
-            >
-              Pay Now Not Available
-            </button>
-          )}
-        </div>
-
-
-        {/* OWNER CONTROLS */}
-        {isOwner && (
-          <div className="mt-6 flex gap-3">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded">
-              Manage Event
-            </button>
-            <button className="px-4 py-2 bg-yellow-500 text-white rounded">
-              Edit
-            </button>
-            <button className="px-4 py-2 bg-red-600 text-white rounded">
-              Delete
-            </button>
+          <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+            <h1 className="text-white text-4xl font-bold">
+              Event Preview
+            </h1>
           </div>
         )}
 
-        {/* INVITATION SECTION */}
-        <div className="mt-6 border p-4 rounded bg-yellow-50">
-          {myInvitation ? (
-            <>
-              <p className="font-semibold">🎉 You are invited</p>
+        {/* overlay */}
+        <div className="absolute inset-0 bg-black/40" />
 
-              <p>
-                Status: <b>{myInvitation.status}</b>
-              </p>
+        {/* title overlay */}
+        <div className="absolute bottom-24 left-10 text-white">
+          <h1 className="text-5xl font-bold drop-shadow-lg">
+            {event.title}
+          </h1>
 
-              {(myInvitation.status === "PENDING" ||
-                myInvitation.status === "PENDING_PAYMENT") && (
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={handleAccept}
-                      className="bg-green-500 text-white px-3 py-1 rounded"
-                    >
-                      Accept
-                    </button>
+          <div className="mt-3 flex gap-3">
+            <span className="px-4 py-1 rounded-full bg-white/20 backdrop-blur">
+              {event.isPublic ? "Public" : "Private"}
+            </span>
 
-                    <button
-                      onClick={handleReject}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      Reject
-                    </button>
-
-                    {event.isPaid && (
-                      <button
-                        onClick={handlePay}
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
-                        Pay & Accept
-                      </button>
-                    )}
-                  </div>
-                )}
-            </>
-          ) : (
-            <p>You are not invited</p>
-          )}
+            <span className="px-4 py-1 rounded-full bg-white/20 backdrop-blur">
+              {event.isPaid ? "Paid Event" : "Free Event"}
+            </span>
+          </div>
         </div>
+      </div>
 
-        {/* REVIEWS */}
-        <ReviewForm
-          eventId={id ?? ""}
-          refreshReviews={() => setRefreshReviews(!refreshReviews)}
-        />
+      {/* MAIN CARD */}
+      <div className="max-w-6xl mx-auto -mt-20 relative z-10">
 
-        {id && (
-          <ReviewList
-            eventId={id}
-            key={refreshReviews ? "1" : "0"}
-            refresh={0}
-          />
-        )}
+        <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white">
+
+          {/* GRID HEADER */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+
+            <div className="p-5 rounded-2xl bg-slate-50 border">
+              <p className="text-gray-500 text-sm">Date</p>
+              <p className="text-lg font-semibold">
+                📅 {new Date(event.date).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 border">
+              <p className="text-gray-500 text-sm">Time</p>
+              <p className="text-lg font-semibold">⏰ {event.time}</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 border">
+              <p className="text-gray-500 text-sm">Venue</p>
+              <p className="text-lg font-semibold">
+                📍 {event.venue || "Online"}
+              </p>
+            </div>
+
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-2">About Event</h2>
+            <p className="text-gray-600 leading-relaxed">
+              {event.description}
+            </p>
+          </div>
+
+          {/* PARTICIPATION CARD */}
+          <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border">
+            <h3 className="font-semibold text-blue-700 mb-2">
+              Participation Type
+            </h3>
+
+            <p className="text-gray-700">
+              {event.isPublic && !event.isPaid && "Free Public → Instant Join"}
+              {event.isPublic && event.isPaid && "Paid Public → Payment Required"}
+              {!event.isPublic && !event.isPaid && "Private Free → Request Access"}
+              {!event.isPublic && event.isPaid && "Private Paid → Payment Required"}
+            </p>
+          </div>
+
+          {/* STATUS DEBUG PANEL (now premium styled) */}
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+
+            <div className="p-4 rounded-xl border bg-white shadow-sm">
+              <p className="text-sm text-gray-500">Invitation</p>
+              <p className="font-semibold">
+                {myInvitation ? "Active" : "None"}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border bg-white shadow-sm">
+              <p className="text-sm text-gray-500">Registration</p>
+              <p className="font-semibold">
+                {registration?.status || "Not Joined"}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border bg-white shadow-sm">
+              <p className="text-sm text-gray-500">Payment</p>
+              <p className="font-semibold">
+                {event.isPaid ? `৳${event.fee}` : "Free"}
+              </p>
+            </div>
+
+          </div>
+
+
+
+          {/* OWNER ACTIONS */}
+          {isOwner && (
+            <div className="flex gap-3 mb-8">
+              <button
+                onClick={() =>
+                  (window.location.href = `/dashboard/event/${event.id}/manage`)
+                }
+                className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+              >
+                Manage
+              </button>
+              <button
+                onClick={() =>
+                  (window.location.href = `/dashboard/event/edit/${event.id}`)
+                }
+                className="px-5 py-2 rounded-xl bg-slate-500 text-white hover:bg-yellow-600 transition"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() =>
+                  (window.location.href = `/dashboard/event/delete/${event.id}`)
+                }
+                className="px-5 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+
+          {/* INVITATION PANEL */}
+          <div className="p-6 rounded-2xl border bg-yellow-50 mb-8">
+
+            {myInvitation ? (
+              <>
+                <p className="font-semibold text-lg mb-2">
+                  🎉 Invitation Received
+                </p>
+
+                <p className="mb-4">
+                  Status: <b>{myInvitation.status}</b>
+                </p>
+
+                <div className="flex gap-2 flex-wrap">
+
+                  <button
+                    onClick={handleAccept}
+                    className="px-4 py-2 rounded-xl bg-green-600 text-white"
+                  >
+                    Accept
+                  </button>
+
+                  <button
+                    onClick={handleReject}
+                    className="px-4 py-2 rounded-xl bg-red-600 text-white"
+                  >
+                    Reject
+                  </button>
+
+                  {event.isPaid && (
+                    <button
+                      onClick={handlePay}
+                      className="px-4 py-2 rounded-xl bg-blue-600 text-white"
+                    >
+                      Pay & Accept
+                    </button>
+                  )}
+
+                </div>
+              </>
+            ) : (
+              <p className="text-gray-600">
+                No invitation available
+              </p>
+            )}
+
+          </div>
+
+          {/* REVIEWS */}
+          <div className="space-y-6">
+            <ReviewForm
+              eventId={id ?? ""}
+              refreshReviews={() =>
+                setRefreshReviews(!refreshReviews)
+              }
+            />
+
+            {id && (
+              <ReviewList
+                eventId={id}
+                key={refreshReviews ? "1" : "0"}
+                refresh={0}
+              />
+            )}
+          </div>
+
+        </div>
       </div>
     </div>
   );

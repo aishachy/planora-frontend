@@ -9,8 +9,6 @@ import {
   getSentInvitations,
 } from "../../app/services/invitationService";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
-
 export default function InviteUserList({
   eventId,
 }: {
@@ -18,7 +16,7 @@ export default function InviteUserList({
 }) {
   const [users, setUsers] = useState<any[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [participationStatus, setParticipationStatus] =
     useState<string>("");
@@ -49,7 +47,7 @@ export default function InviteUserList({
     const loadInvited = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token || !eventId) return;
 
         const res = await getSentInvitations(token, eventId);
 
@@ -71,12 +69,14 @@ export default function InviteUserList({
   useEffect(() => {
     const loadStatus = async () => {
       try {
+        if (!eventId) return;
+
         const res = await fetch(
-          `${API}/events/${eventId}/participation-status`
+          `${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/participation-status`
         );
 
         const data = await res.json();
-        setParticipationStatus(data.data);
+        setParticipationStatus(data.data || "");
       } catch (err) {
         console.log(err);
       }
@@ -90,20 +90,18 @@ export default function InviteUserList({
   // =========================
   const handleInvite = async (userId: string) => {
     try {
-      setLoading(true);
+      setLoadingId(userId);
 
       const token = localStorage.getItem("token");
       if (!token) return;
 
       await sendInvitation(eventId, userId, token);
 
-      alert("Invitation sent");
-
       setInvitedUsers((prev) => [...prev, userId]);
     } catch (error: any) {
       alert(error.message);
     } finally {
-      setLoading(false);
+      setLoadingId(null);
     }
   };
 
@@ -120,15 +118,10 @@ export default function InviteUserList({
   });
 
   // =========================
-  // BUTTON DISABLE LOGIC
+  // BUTTON LOGIC
   // =========================
   const isInviteDisabled = (userId: string) => {
-    if (invitedUsers.includes(userId)) return true;
-
-    // optional business rule
-    if (participationStatus === "FREE_PUBLIC") return false;
-
-    return false;
+    return invitedUsers.includes(userId);
   };
 
   return (
@@ -149,6 +142,7 @@ export default function InviteUserList({
       ) : (
         filteredUsers.map((user) => {
           const disabled = isInviteDisabled(user.id);
+          const isLoading = loadingId === user.id;
 
           return (
             <div
@@ -164,16 +158,16 @@ export default function InviteUserList({
 
               <button
                 onClick={() => handleInvite(user.id)}
-                disabled={disabled || loading}
-                className={`px-4 py-2 rounded text-white ${
-                  disabled || loading
+                disabled={disabled || isLoading}
+                className={`px-4 py-2 rounded text-white transition ${
+                  disabled
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-black"
+                    : "bg-black hover:bg-gray-800"
                 }`}
               >
                 {invitedUsers.includes(user.id)
                   ? "Invited"
-                  : loading
+                  : isLoading
                   ? "Sending..."
                   : "Invite"}
               </button>

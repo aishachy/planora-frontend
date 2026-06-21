@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,30 +6,44 @@ import { getMyRegistrations } from "../../services/registrationService";
 import { createCheckoutSession } from "app/services/paymentService";
 
 export default function MyRegistrationsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [registrations, setRegistrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // =========================
   // LOAD DATA
   // =========================
-  const loadData = async () => {
+  const fetchData = async () => {
     try {
+      setLoading(true);
       const result = await getMyRegistrations();
       setRegistrations(result.data || []);
     } catch (err) {
       console.error("Failed to load registrations:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchData();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   // =========================
-  // HANDLE PAYMENT
+  // PAYMENT
   // =========================
   const handlePayment = async (registrationId: string, amount?: number) => {
     try {
-      if (!amount || amount <= 0) {
-        alert("Invalid payment amount");
-        return;
-      }
+      if (!amount || amount <= 0) return alert("Invalid payment amount");
 
       const res = await createCheckoutSession(registrationId, amount);
 
@@ -36,128 +51,150 @@ export default function MyRegistrationsPage() {
         window.location.assign(res.url);
       }
     } catch (error) {
-      console.error("Payment error:", error);
-      alert("Failed to start payment");
+      console.error(error);
+      alert("Payment failed");
     }
   };
 
   // =========================
-  // INITIAL + TAB RETURN REFRESH
+  // LOADING UI
   // =========================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await getMyRegistrations();
-        setRegistrations(result.data || []);
-      } catch (err) {
-        console.error("Failed to load registrations:", err);
-      }
-    };
-
-    // initial fetch (async so setState isn't called synchronously in effect body)
-    fetchData();
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        // call async fetch without causing sync setState
-        fetchData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, []);
+  if (loading) {
+    return (
+      <div className="p-10 text-center text-gray-500">
+        Loading your registrations...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">My Registrations</h1>
+    <div className="min-h-screen bg-linear-to-b from-slate-100 to-slate-200 p-6">
+      <div className="max-w-5xl mx-auto">
+        {/* HEADER */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800">
+            My Registrations
+          </h1>
+          <p className="text-gray-500">
+            Track your events, payments, and status in one place
+          </p>
+        </div>
 
-      {registrations.length === 0 ? (
-        <p>No registrations found.</p>
-      ) : (
-        registrations.map((r) => {
-          const payment = Array.isArray(r.payment)
-            ? r.payment[0]
-            : r.payment;
+        {/* EMPTY */}
+        {registrations.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center shadow">
+            <p className="text-gray-500">No registrations found</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {registrations.map((r) => {
+              const payment = Array.isArray(r.payment)
+                ? r.payment[0]
+                : r.payment;
 
-          const isPaidEvent =
-            r.event?.isPaid || (r.event?.fee && r.event.fee > 0);
+              const isPaidEvent =
+                r.event?.isPaid || (r.event?.fee && r.event.fee > 0);
 
-          const isPaymentCompleted = payment?.status === "COMPLETED";
+              const isCompleted = payment?.status === "COMPLETED";
+              const isPending =
+                isPaidEvent && (!payment || payment?.status === "PENDING");
 
-          const isPaymentPending =
-            isPaidEvent && (!payment || payment.status === "PENDING");
-          console.log("REGISTRATION:", r);
-          console.log("PAYMENT:", payment);
-          return (
-            <div key={r.id} className="border rounded p-4 mb-3">
-              {/* EVENT */}
-              <h2 className="font-semibold">{r.event.title}</h2>
-
-              <p>Date: {new Date(r.event.date).toLocaleDateString()}</p>
-              <p>Venue: {r.event.venue}</p>
-
-              {/* STATUS */}
-              <p>
-                Status:
-                <span className="font-bold ml-2">{r.status}</span>
-              </p>
-
-              {/* FEE */}
-              {isPaidEvent && (
-                <p>Fee: ${r.event.fee ?? 0}</p>
-              )}
-
-              {/* PAYMENT STATUS */}
-              {isPaidEvent && payment && (
-                <p className="mt-2">
-                  Payment:
-                  <span
-                    className={
-                      payment.status === "COMPLETED"
-                        ? "text-green-600 ml-2 font-medium"
-                        : payment.status === "FAILED"
-                          ? "text-red-600 ml-2 font-medium"
-                          : "text-yellow-600 ml-2 font-medium"
-                    }
-                  >
-                    {payment.status}
-                  </span>
-                </p>
-              )}
-
-              {/* SUCCESS MESSAGE */}
-              {isPaymentCompleted && (
-                <div className="mt-3 text-green-600 font-medium">
-                  ✅ Payment Completed
-                </div>
-              )}
-
-              {/* PAY BUTTON */}
-              {isPaidEvent && isPaymentPending && (
-                <button
-                  onClick={() =>
-                    handlePayment(r.id, r.event.fee ?? 0)
-                  }
-                  className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              return (
+                <div
+                  key={r.id}
+                  className="bg-white rounded-2xl shadow-md border p-5 hover:shadow-lg transition"
                 >
-                  Pay Now
-                </button>
-              )}
+                  {/* TOP SECTION */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-xl font-semibold text-slate-800">
+                        {r.event.title}
+                      </h2>
 
-              {/* FREE EVENT */}
-              {!isPaidEvent && (
-                <div className="mt-2 text-green-600 font-medium">
-                  Free Event — No Payment Required
+                      <p className="text-sm text-gray-500">
+                        📅{" "}
+                        {new Date(r.event.date).toLocaleDateString()} • 📍{" "}
+                        {r.event.venue}
+                      </p>
+                    </div>
+
+                    {/* STATUS BADGE */}
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full font-medium ${
+                        r.status === "APPROVED"
+                          ? "bg-green-100 text-green-700"
+                          : r.status === "REJECTED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
+
+                  {/* PAYMENT INFO */}
+                  <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-gray-500">Event Type</p>
+                      <p className="font-medium">
+                        {isPaidEvent ? "Paid Event" : "Free Event"}
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-gray-500">Fee</p>
+                      <p className="font-medium">
+                        {isPaidEvent ? `৳${r.event.fee}` : "Free"}
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-gray-500">Payment</p>
+                      <p
+                        className={`font-medium ${
+                          payment?.status === "COMPLETED"
+                            ? "text-green-600"
+                            : payment?.status === "FAILED"
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        {payment?.status || "NOT INITIATED"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="mt-4 flex justify-between items-center">
+                    {isCompleted ? (
+                      <div className="text-green-600 font-medium">
+                        ✅ Payment Completed
+                      </div>
+                    ) : isPending ? (
+                      <button
+                        onClick={() =>
+                          handlePayment(r.id, r.event.fee ?? 0)
+                        }
+                        className="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+                      >
+                        Pay Now
+                      </button>
+                    ) : (
+                      <div className="text-gray-400 text-sm">
+                        No payment required
+                      </div>
+                    )}
+
+                    <button className="text-sm text-blue-600 hover:underline">
+                      View Event →
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
