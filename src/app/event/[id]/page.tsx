@@ -13,7 +13,7 @@ import {
   getMyInvitations,
   acceptInvitation,
   rejectInvitation,
-  payAndAcceptInvitation,
+  approvePaymentInvitation,
 } from "../../services/invitationService";
 
 interface Event {
@@ -202,7 +202,7 @@ export default function EventDetailsPage() {
   };
 
   const handlePay = async () => {
-    await payAndAcceptInvitation(myInvitation.id, token!);
+    await approvePaymentInvitation(myInvitation.id, token!);
 
     setMyInvitation({
       ...myInvitation,

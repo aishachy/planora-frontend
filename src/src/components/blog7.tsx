@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-
 
 interface Event {
   id: string;
@@ -28,13 +26,14 @@ export const HeroSection = () => {
     const fetchEvents = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/api/event/featured"
+          `${process.env.NEXT_PUBLIC_API_URL}/api/event/featured`
         );
 
         const data = await res.json();
+
         setEvents(data?.data ?? []);
       } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch featured events:", error);
         setEvents([]);
       } finally {
         setLoading(false);
@@ -46,81 +45,81 @@ export const HeroSection = () => {
 
   if (loading) {
     return (
-      <div className="h-[60vh] flex items-center justify-center">
-        Loading...
-      </div>
+      <section className="bg-slate-950 py-24 text-white">
+        <div className="container mx-auto flex h-[40vh] items-center justify-center">
+          <p className="text-lg text-slate-400">Loading featured events...</p>
+        </div>
+      </section>
     );
   }
 
   if (!events.length) {
     return (
-      <div className="h-[60vh] flex items-center justify-center">
-        No events found
-      </div>
+      <section className="bg-slate-950 py-24 text-white">
+        <div className="container mx-auto flex h-[40vh] items-center justify-center">
+          <p className="text-lg text-slate-400">No featured events found.</p>
+        </div>
+      </section>
     );
   }
 
   return (
-    <section className="min-h-screen bg-slate-950 text-white">
-      <div className="max-w-7xl mx-auto flex flex-col items-center gap-8">
-        <div className="text-center">
-          <h2 className="py-8 text-4xl md:text-6xl font-bold mb-4">
+    <section className="bg-slate-950 py-24 text-white">
+      <div className="container mx-auto px-4">
+        {/* Hero Content */}
+        <div className="mx-auto mb-16 max-w-4xl text-center">
+          <h2 className="mb-6 text-4xl font-bold tracking-tight md:text-6xl">
             Featured Events
           </h2>
-          <h2 className="mb-3 text-5xl tracking-tighter text-pretty md:mb-4 lg:mb-6 lg:max-w-3xl lg:text-7xl">
-            Event
-          </h2>
-          <p className="mb-8 text-gray-400 md:text-base lg:max-w-2xl lg:text-lg">
-            Join us for an exclusive event where industry experts share insights on modern web development, UI design, and <br />
-            the latest tech trends. Stay ahead with practical knowledge and real-world experience.
+
+          <p className="mx-auto max-w-3xl text-lg text-slate-400">
+            Join industry experts, innovators, and professionals at our
+            upcoming events. Discover new opportunities, expand your network,
+            and gain valuable insights from real-world experiences.
           </p>
         </div>
 
-        {/* CARD LAYOUT - 4 cards in a horizontal row */}
-        <div className="flex space-x-6 overflow-x-auto">
+        {/* Events Grid */}
+        <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
           {events.map((event) => (
             <Card
               key={event.id}
-              className="rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300"
+              className="group flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10"
             >
-              {/* Event Image or Placeholder */}
-              <div className="aspect-video w-full">
-                <a
-                  href="#"
-                  target="_blank"
-                  className="transition-opacity duration-200 fade-in hover:opacity-70"
-                >
-                  <img
-                    src="https://via.placeholder.com/600x300.png" // Placeholder for event image
-                    alt={event.title}
-                    className="h-full w-full object-cover object-center"
-                  />
-                </a>
+              {/* Event Image */}
+              <div className="aspect-video overflow-hidden">
+                <img
+                  src="https://via.placeholder.com/600x300.png"
+                  alt={event.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
               </div>
+
               <CardHeader>
-                <h3 className="text-xl hover:underline md:text-xl">
-                  <a href="#" target="_blank">
-                    {event.title}
-                  </a>
+                <h3 className="line-clamp-2 text-xl font-semibold text-white">
+                  {event.title}
                 </h3>
-                <p className="mt-2 text-sm font-semibold text-foreground/80">
-                  {event.date ? new Date(event.date).toDateString() : "No Date"} · {event.time || "No Time"}
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {event.date
+                    ? new Date(event.date).toLocaleDateString()
+                    : "No Date"}
+                  {" • "}
+                  {event.time || "No Time"}
                 </p>
               </CardHeader>
-              <CardContent>
-                <p className="leading-relaxed text-muted-foreground">
+
+              <CardContent className="flex-1">
+                <p className="line-clamp-4 text-sm leading-relaxed text-slate-300">
                   {event.description}
                 </p>
               </CardContent>
+
               <CardFooter>
-                <a
-                  href="#"
-                  target="_blank"
-                  className="flex items-center text-muted-foreground hover:underline"
-                >
-                  Read more
-                  <ArrowRight className="ml-1 size-4" />
-                </a>
+                <button className="flex items-center gap-2 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300">
+                  View Event
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </CardFooter>
             </Card>
           ))}

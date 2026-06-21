@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
+import { useAuth } from "../app/providers/authProvider";
 
 import {
   Accordion,
@@ -57,14 +60,8 @@ interface Navbar1Props {
 const Navbar1 = ({
   menu = [
     { title: "Home", url: "/" },
-    {
-      title: "Events",
-      url: "/event",
-    },
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-    },
+    { title: "Events", url: "/event" },
+    { title: "Dashboard", url: "/dashboard" },
   ],
   auth = {
     login: { title: "Login", url: "/login" },
@@ -72,57 +69,199 @@ const Navbar1 = ({
   },
   className,
 }: Navbar1Props) => {
+  const router = useRouter();
+
+  const { user, setUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  // =========================
+  // GET CURRENT USER
+  // =========================
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+
+        if (data.success) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  // =========================
+  // LOGOUT
+  // =========================
+const handleLogout = async () => {
+  await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
+    {
+      method: "POST",
+      credentials: "include",
+    }
+  );
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  setUser(null);
+
+  router.push("/login");
+  router.refresh();
+};
   return (
     <section className={cn("py-4", className)}>
       <div className="container mx-auto">
-        {/* Desktop Menu */}
+
+        {/* =========================
+            DESKTOP MENU
+        ========================= */}
         <nav className="hidden items-center justify-between lg:flex">
+
           <div className="flex items-center gap-6">
-            {/* Logo */}
-            <div className="flex items-center">
-              <NavigationMenu>
-                <NavigationMenuList>
-                  {menu.map((item) => renderMenuItem(item))}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
+            <NavigationMenu>
+              <NavigationMenuList>
+                {menu.map((item) => renderMenuItem(item))}
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" render={<a href={auth.login.url} />} nativeButton={false}>{auth.login.title}</Button>
-            <Button size="sm" render={<a href={auth.signup.url} />} nativeButton={false}>{auth.signup.title}</Button>
+
+          {/* AUTH AREA */}
+          <div className="flex gap-2 items-center">
+            {!loading && user ? (
+              <>
+                <span className="text-sm font-medium">
+                  Welcome, {user.name}
+                </span>
+
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<a href={auth.login.url} />}
+                  nativeButton={false}
+                >
+                  {auth.login.title}
+                </Button>
+
+                <Button
+                  size="sm"
+                  render={<a href={auth.signup.url} />}
+                  nativeButton={false}
+                >
+                  {auth.signup.title}
+                </Button>
+              </>
+            )}
           </div>
         </nav>
 
-        {/* Mobile Menu */}
+        {/* =========================
+            MOBILE MENU
+        ========================= */}
         <div className="block lg:hidden">
           <div className="flex items-center justify-between">
-            {/* Logo */}
+
             <Sheet>
-              <SheetTrigger render={<Button variant="outline" size="icon" />}><Menu className="size-4" /></SheetTrigger>
+              <SheetTrigger
+                render={<Button variant="outline" size="icon" />}
+              >
+                <Menu className="size-4" />
+              </SheetTrigger>
+
               <SheetContent className="overflow-y-auto">
                 <div className="flex flex-col gap-6 p-4">
+
                   <Accordion
-                    type="single"
                     collapsible
                     className="flex w-full flex-col gap-4"
                   >
                     {menu.map((item) => renderMobileMenuItem(item))}
                   </Accordion>
 
+                  {/* MOBILE AUTH */}
                   <div className="flex flex-col gap-3">
-                    <Button variant="outline" render={<a href={auth.login.url} />} nativeButton={false}>{auth.login.title}</Button>
-                    <Button render={<a href={auth.signup.url} />} nativeButton={false}>{auth.signup.title}</Button>
+                    {!loading && user ? (
+                      <>
+                        <div className="text-sm font-semibold">
+                          Welcome, {user.name}
+                        </div>
+
+                        <Button
+                          variant="destructive"
+                          onClick={handleLogout}
+                        >
+                          Logout
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          render={<a href={auth.login.url} />}
+                          nativeButton={false}
+                        >
+                          {auth.login.title}
+                        </Button>
+
+                        <Button
+                          render={<a href={auth.signup.url} />}
+                          nativeButton={false}
+                        >
+                          {auth.signup.title}
+                        </Button>
+                      </>
+                    )}
                   </div>
+
                 </div>
               </SheetContent>
             </Sheet>
+
           </div>
         </div>
+
       </div>
     </section>
   );
 };
 
+// =========================
+// MENU RENDER HELPERS
+// =========================
 const renderMenuItem = (item: MenuItem) => {
   if (item.items) {
     return (
@@ -130,7 +269,11 @@ const renderMenuItem = (item: MenuItem) => {
         <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
         <NavigationMenuContent className="bg-popover text-popover-foreground">
           {item.items.map((subItem) => (
-            <NavigationMenuLink key={subItem.title} className="w-80" render={<SubMenuLink item={subItem} />}></NavigationMenuLink>
+            <NavigationMenuLink
+              key={subItem.title}
+              className="w-80"
+              render={<SubMenuLink item={subItem} />}
+            />
           ))}
         </NavigationMenuContent>
       </NavigationMenuItem>

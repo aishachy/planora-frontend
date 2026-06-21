@@ -2,19 +2,34 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const getEventRegistrations = async (eventId: string | undefined, p0: string) => {
-  const res = await fetch(`${API_URL}/api/registration/event/${eventId}`, {
-    credentials: "include",
-  });
-  return res.json();
+const safeFetch = async (url: string, options?: RequestInit) => {
+  const res = await fetch(url, options);
+
+  const text = await res.text();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("❌ Non-JSON response:", text);
+    throw new Error("Server returned invalid response");
+  }
+
+  if (!res.ok) {
+    throw new Error(data?.message || "Request failed");
+  }
+
+  return data;
 };
+
 
 export const getMyRegistrations =
   async () => {
     const token =
       localStorage.getItem("token");
 
-    const res = await fetch(
+    return safeFetch(
       `${API_URL}/api/registration/me`,
       {
         headers: {
@@ -22,43 +37,33 @@ export const getMyRegistrations =
         },
       }
     );
-
-    return res.json();
   };
 
 export const getRegistrationById = async (id: string) => {
-  const res = await fetch(
-    `${API_URL}/api/registration/${id}`,
-    {
-      credentials: "include",
-    }
-  );
-
-  return res.json();
+  return safeFetch(`${API_URL}/api/registration/${id}`, {
+    credentials: "include",
+  });
 };
 
 export const approveRegistration = async (id: string) => {
-  const res = await fetch(`${API_URL}/api/registration/approve/${id}`, {
+  return safeFetch(`${API_URL}/api/registration/approve/${id}`, {
     method: "PATCH",
     credentials: "include",
   });
-  return res.json();
 };
 
 export const rejectRegistration = async (id: string) => {
-  const res = await fetch(`${API_URL}/api/registration/reject/${id}`, {
+  return safeFetch(`${API_URL}/api/registration/reject/${id}`, {
     method: "PATCH",
     credentials: "include",
   });
-  return res.json();
 };
 
 export const banParticipant = async (userId: string, eventId: string) => {
-  const res = await fetch(`${API_URL}/api/registration/ban`, {
+  return safeFetch(`${API_URL}/api/registration/ban`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, eventId }),
   });
-  return res.json();
 };

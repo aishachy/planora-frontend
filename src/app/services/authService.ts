@@ -1,4 +1,5 @@
 
+import { useAuth } from "../providers/authProvider";
 
 export interface LoginData {
   email: string;
@@ -66,3 +67,12 @@ export const registerUser = async (data: RegisterData) => {
   return result.user;
 };
 
+export const logout = async () => {
+  await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+};

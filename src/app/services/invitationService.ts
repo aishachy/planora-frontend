@@ -18,6 +18,8 @@ const safeJson = async (res: Response) => {
    GET MY INVITATIONS (RECEIVED)
 ------------------------------------------*/
 export const getMyInvitations = async (token: string) => {
+    if (!API) throw new Error("API URL not configured");
+
     const res = await fetch(`${API}/api/invitation/me`, {
         method: "GET",
         headers: {
@@ -41,18 +43,25 @@ export const getMyInvitations = async (token: string) => {
 
 /* -----------------------------------------
    GET SENT INVITATIONS
+   ❌ FIXED ENDPOINT HERE
 ------------------------------------------*/
-export const getSentInvitations = async (token: string) => {
-  const res = await fetch(`${API}/api/invitation/sentInvitations`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const getSentInvitations = async (token: string, eventId: string) => {
+    if (!API) throw new Error("API URL not configured");
 
-  const data = await res.json();
+    const res = await fetch(`${API}/api/invitation/sent`, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
 
-  return data;
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to load sent invitations");
+    }
+
+    return data;
 };
 
 /* -----------------------------------------
@@ -63,6 +72,8 @@ export const sendInvitation = async (
     userId: string,
     token: string
 ) => {
+    if (!API) throw new Error("API URL not configured");
+
     const res = await fetch(`${API}/api/invitation`, {
         method: "POST",
         headers: {
@@ -85,6 +96,8 @@ export const sendInvitation = async (
    ACCEPT INVITATION
 ------------------------------------------*/
 export const acceptInvitation = async (id: string, token: string) => {
+    if (!API) throw new Error("API URL not configured");
+
     const res = await fetch(`${API}/api/invitation/${id}/accept`, {
         method: "PATCH",
         headers: {
@@ -105,6 +118,8 @@ export const acceptInvitation = async (id: string, token: string) => {
    REJECT INVITATION
 ------------------------------------------*/
 export const rejectInvitation = async (id: string, token: string) => {
+    if (!API) throw new Error("API URL not configured");
+
     const res = await fetch(`${API}/api/invitation/${id}/reject`, {
         method: "PATCH",
         headers: {
@@ -122,13 +137,15 @@ export const rejectInvitation = async (id: string, token: string) => {
 };
 
 /* -----------------------------------------
-   PAY & ACCEPT INVITATION
+   APPROVE PAYMENT INVITATION
 ------------------------------------------*/
-export const payAndAcceptInvitation = async (
+export const approvePaymentInvitation = async (
     id: string,
     token: string
 ) => {
-    const res = await fetch(`${API}/api/invitation/pay/${id}`, {
+    if (!API) throw new Error("API URL not configured");
+
+    const res = await fetch(`${API}/api/invitation/${id}/approve-payment`, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${token}`,
